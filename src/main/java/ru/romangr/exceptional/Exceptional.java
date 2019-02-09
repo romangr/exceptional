@@ -80,14 +80,24 @@ public final class Exceptional<T> {
   }
 
   /**
+   * @param mapper should be not null
+   */
+  @SuppressWarnings("unchecked")
+  public <V> Exceptional<V> flatMap(Function<? super T, Exceptional<V>> mapper) {
+    if (this.thisIsNotValue()) {
+      return (Exceptional<V>) this;
+    }
+    return mapper.apply(this.value);
+  }
+
+  /**
    * @param consumer should not be null
    */
   public Exceptional<T> ifValue(Consumer<? super T> consumer) {
     if (thisIsNotValue()) {
       return this;
     }
-    consumer.accept(this.value);
-    return this;
+    return executeSafely(() -> consumer.accept(this.value));
   }
 
   /**
@@ -95,7 +105,7 @@ public final class Exceptional<T> {
    */
   public Exceptional<T> ifException(Consumer<Exception> consumer) {
     if (this.isException()) {
-      consumer.accept(this.exception);
+      return executeSafely(() -> consumer.accept(this.exception));
     }
     return this;
   }
@@ -105,7 +115,7 @@ public final class Exceptional<T> {
    */
   public Exceptional<T> ifEmpty(Runnable runnable) {
     if (!this.isValuePresent() && !this.isException()) {
-      runnable.run();
+      return executeSafely(runnable);
     }
     return this;
   }
@@ -130,5 +140,14 @@ public final class Exceptional<T> {
 
   private boolean thisIsNotValue() {
     return this.isException() || !this.isValuePresent();
+  }
+
+  private Exceptional<T> executeSafely(Runnable runnable) {
+    try {
+      runnable.run();
+      return this;
+    } catch (Exception e) {
+      return new Exceptional<>(e);
+    }
   }
 }
