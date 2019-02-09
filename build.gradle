@@ -1,0 +1,25 @@
+plugins {
+    id 'java'
+}
+
+group 'ru.romangr'
+version '0.1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile('org.junit.jupiter:junit-jupiter-api:5.2.0')
+    testCompile 'org.assertj:assertj-core:3.10.0'
+    testRuntime('org.junit.jupiter:junit-jupiter-engine:5.2.0')
+}
+
+test {
+    useJUnitPlatform {
+        includeTags 'unit'
+        includeEngines 'junit-jupiter'
+    }
+}
