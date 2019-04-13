@@ -49,20 +49,6 @@ public final class Exceptional<T> {
   }
 
   /**
-   * @throws {@link IllegalStateException} in case if this is empty or contains an
-   *         exception
-   */
-  public T getValue() {
-    if (this.isException()) {
-      throw new IllegalStateException();
-    }
-    if (!this.isValuePresent()) {
-      throw new IllegalStateException();
-    }
-    return value;
-  }
-
-  /**
    * Maps the current value catching all the exceptions from mapper
    * 
    * @param mapper should be not null
@@ -80,14 +66,24 @@ public final class Exceptional<T> {
   }
 
   /**
+   * @param mapper should be not null
+   */
+  @SuppressWarnings("unchecked")
+  public <V> Exceptional<V> flatMap(Function<? super T, Exceptional<V>> mapper) {
+    if (this.thisIsNotValue()) {
+      return (Exceptional<V>) this;
+    }
+    return mapper.apply(this.value);
+  }
+
+  /**
    * @param consumer should not be null
    */
   public Exceptional<T> ifValue(Consumer<? super T> consumer) {
     if (thisIsNotValue()) {
       return this;
     }
-    consumer.accept(this.value);
-    return this;
+    return executeSafely(() -> consumer.accept(this.value));
   }
 
   /**
@@ -95,19 +91,64 @@ public final class Exceptional<T> {
    */
   public Exceptional<T> ifException(Consumer<Exception> consumer) {
     if (this.isException()) {
-      consumer.accept(this.exception);
+      return executeSafely(() -> consumer.accept(this.exception));
     }
     return this;
   }
 
   /**
-   * @param consumer should not be null
+   * @param runnable should not be null
    */
   public Exceptional<T> ifEmpty(Runnable runnable) {
     if (!this.isValuePresent() && !this.isException()) {
-      runnable.run();
+      return executeSafely(runnable);
     }
     return this;
+  }
+
+  /**
+   * @throws {@link IllegalStateException} in case if this is empty or contains an
+   *         exception
+   */
+  public T getValue() throws IllegalStateException {
+    if (this.isException()) {
+      throw new IllegalStateException();
+    }
+    if (!this.isValuePresent()) {
+      throw new IllegalStateException();
+    }
+    return this.value;
+  }
+
+  /**
+   * @throws {@link IllegalStateException} in case if this is empty or contains a
+   *         value
+   */
+  public Exception getException() throws IllegalStateException {
+    if (!this.isException()) {
+      throw new IllegalStateException();
+    }
+    return this.exception;
+  }
+
+  /**
+   * @param defaultValue nullable
+   */
+  public T getOrDefault(T defaultValue) {
+    if (this.thisIsNotValue()) {
+      return defaultValue;
+    }
+    return this.value;
+  }
+
+  /**
+   * @param mapper should be not null
+   */
+  public Exceptional<T> resumeOnException(Function<Exception, T> mapper) {
+    if (!this.isException()) {
+      return this;
+    }
+    return Exceptional.getExceptional(() -> mapper.apply(this.exception));
   }
 
   public boolean isException() {
@@ -130,5 +171,14 @@ public final class Exceptional<T> {
 
   private boolean thisIsNotValue() {
     return this.isException() || !this.isValuePresent();
+  }
+
+  private Exceptional<T> executeSafely(Runnable runnable) {
+    try {
+      runnable.run();
+      return this;
+    } catch (Exception e) {
+      return new Exceptional<>(e);
+    }
   }
 }
