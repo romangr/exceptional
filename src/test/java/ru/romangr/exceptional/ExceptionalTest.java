@@ -1,12 +1,13 @@
 package ru.romangr.exceptional;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag("unit")
 class ExceptionalTest {
@@ -40,6 +41,89 @@ class ExceptionalTest {
     assertThat(exceptional.isException()).isTrue();
     assertThat(exceptional.isValuePresent()).isFalse();
     assertThrows(IllegalStateException.class, exceptional::getValue);
+  }
+
+  @Test
+  void getException() {
+    Exception exception = newException();
+    Exceptional<Integer> exceptional = Exceptional.exceptional(exception);
+
+    assertThat(exceptional.getException()).isSameAs(exception);
+  }
+
+  @Test
+  void getExceptionOfValue() {
+    Exceptional<String> exceptional = Exceptional.exceptional("test");
+
+    assertThrows(IllegalStateException.class, exceptional::getException);
+  }
+
+  @Test
+  void getExceptionOfNullValue() {
+    String s = null;
+    Exceptional<String> exceptional = Exceptional.exceptional(s);
+
+    assertThrows(IllegalStateException.class, exceptional::getException);
+  }
+
+  @Test
+  void getOrDefaultWithValue() {
+    String s = "test";
+    Exceptional<String> exceptional = Exceptional.exceptional(s);
+
+    assertThat(exceptional.getOrDefault("123")).isEqualTo(s);
+  }
+
+  @Test
+  void getOrDefaultWhenEmpty() {
+    String s = null;
+    Exceptional<String> exceptional = Exceptional.exceptional(s);
+
+    assertThat(exceptional.getOrDefault("123")).isEqualTo("123");
+  }
+
+  @Test
+  void getOrDefaultWhenException() {
+    Exception exception = newException();
+    Exceptional<String> exceptional = Exceptional.exceptional(exception);
+
+    assertThat(exceptional.getOrDefault("123")).isEqualTo("123");
+  }
+
+  @Test
+  void mapExceptionWithValue() {
+    String s = "test";
+    Exceptional<String> exceptional = Exceptional.exceptional(s)
+            .resumeOnException(e -> "123")
+            .map(v -> "test2");
+
+    assertThat(exceptional.isValuePresent()).isTrue();
+    assertThat(exceptional.isException()).isFalse();
+    assertThat(exceptional.getValue()).isEqualTo("test2");
+  }
+
+  @Test
+  void mapExceptionWhenEmpty() {
+    String s = null;
+    Exceptional<String> exceptional = Exceptional.exceptional(s)
+            .resumeOnException(e -> "123")
+            .map(v -> "test2");
+
+    assertThat(exceptional.isValuePresent()).isFalse();
+    assertThat(exceptional.isException()).isFalse();
+    assertThrows(IllegalStateException.class, exceptional::getValue);
+  }
+
+  @Test
+  void mapExceptionWhenException() {
+    Exception exception = newException();
+    Exceptional<String> exceptional = Exceptional.exceptional(exception)
+            .resumeOnException(e -> "123")
+            .map(v -> v + "test2");
+
+    assertThat(exceptional.isValuePresent()).isTrue();
+    assertThat(exceptional.isException()).isFalse();
+    assertThat(exceptional.getValue()).isEqualTo("123test2");
   }
 
   @Test
@@ -251,7 +335,7 @@ class ExceptionalTest {
       .flatMap(string -> Exceptional.getExceptional(() -> Integer.parseInt(string)))
       .ifValue(integers::add)
       .ifException(exceptions::add);
-      
+
     assertThat(integers).hasSize(0);
     assertThat(exceptions).hasSize(1);
   }
@@ -267,7 +351,7 @@ class ExceptionalTest {
       .ifValue(integers::add)
       .ifException(exceptions::add)
       .ifEmpty(() -> strings.add("test"));
-      
+
     assertThat(strings).hasSize(1).contains("test");
     assertThat(integers).hasSize(0);
     assertThat(exceptions).hasSize(0);
@@ -284,7 +368,7 @@ class ExceptionalTest {
       .ifValue(integers::add)
       .ifException(exceptions::add)
       .ifEmpty(() -> strings.add("test"));
-      
+
     assertThat(strings).hasSize(1).contains("test");
     assertThat(integers).hasSize(0);
     assertThat(exceptions).hasSize(0);
@@ -300,7 +384,7 @@ class ExceptionalTest {
       .ifValue(integers::add)
       .ifException(exceptions::add)
       .ifEmpty(() -> strings.add("test"));
-      
+
     assertThat(exceptions).hasSize(1);
     assertThat(strings).hasSize(0);
     assertThat(integers).hasSize(0);
