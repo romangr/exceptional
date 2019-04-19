@@ -1,8 +1,10 @@
 package ru.romangr.exceptional;
 
+import ru.romangr.exceptional.type.ExceptionalFunction;
+import ru.romangr.exceptional.type.ExceptionalSupplier;
+
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 public final class Exceptional<T> {
 
@@ -12,12 +14,21 @@ public final class Exceptional<T> {
   /**
    * @param supplier should not be null
    */
-  public static <V> Exceptional<V> getExceptional(Supplier<V> supplier) {
+  public static <V> Exceptional<V> getExceptional(ExceptionalSupplier<V> supplier) {
     try {
       return Exceptional.exceptional(supplier.get());
     } catch (Exception e) {
       return Exceptional.exceptional(e);
     }
+  }
+
+  public static <V> Exceptional<V> getExceptional(ExceptionalSupplier<V> supplier,
+      int numberOfRetries) {
+    Exceptional<V> exceptional = Exceptional.getExceptional(supplier);
+    for (int i = 0; exceptional.isException() && i < numberOfRetries; i++) {
+      exceptional = exceptional.resumeOnException(e -> supplier.get());
+    }
+    return exceptional;
   }
 
   /**
@@ -50,7 +61,7 @@ public final class Exceptional<T> {
 
   /**
    * Maps the current value catching all the exceptions from mapper
-   * 
+   *
    * @param mapper should be not null
    */
   @SuppressWarnings("unchecked")
@@ -107,8 +118,7 @@ public final class Exceptional<T> {
   }
 
   /**
-   * @throws {@link IllegalStateException} in case if this is empty or contains an
-   *         exception
+   * @throws {@link IllegalStateException} in case if this is empty or contains an exception
    */
   public T getValue() throws IllegalStateException {
     if (this.isException()) {
@@ -121,8 +131,7 @@ public final class Exceptional<T> {
   }
 
   /**
-   * @throws {@link IllegalStateException} in case if this is empty or contains a
-   *         value
+   * @throws {@link IllegalStateException} in case if this is empty or contains a value
    */
   public Exception getException() throws IllegalStateException {
     if (!this.isException()) {
@@ -144,11 +153,21 @@ public final class Exceptional<T> {
   /**
    * @param mapper should be not null
    */
-  public Exceptional<T> resumeOnException(Function<Exception, T> mapper) {
+  public Exceptional<T> resumeOnException(ExceptionalFunction<Exception, T> mapper) {
     if (!this.isException()) {
       return this;
     }
     return Exceptional.getExceptional(() -> mapper.apply(this.exception));
+  }
+
+  /**
+   * @param mapper should be not null
+   */
+  public Exceptional<T> mapException(Function<Exception, Exception> mapper) {
+    if (!this.isException()) {
+      return this;
+    }
+    return Exceptional.exceptional(mapper.apply(this.exception));
   }
 
   public boolean isException() {
