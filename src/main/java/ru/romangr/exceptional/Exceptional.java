@@ -1,14 +1,20 @@
 package ru.romangr.exceptional;
 
+import javax.annotation.Nullable;
+import ru.romangr.exceptional.nullability.NonNullApi;
 import ru.romangr.exceptional.type.ExceptionalFunction;
 import ru.romangr.exceptional.type.ExceptionalSupplier;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+@NonNullApi
 public final class Exceptional<T> {
 
+  @Nullable
   private final Exception exception;
+
+  @Nullable
   private final T value;
 
   /**
@@ -34,7 +40,7 @@ public final class Exceptional<T> {
   /**
    * @param value nullable
    */
-  public static <V> Exceptional<V> exceptional(V value) {
+  public static <V> Exceptional<V> exceptional(@Nullable V value) {
     return new Exceptional<>(value);
   }
 
@@ -42,9 +48,6 @@ public final class Exceptional<T> {
    * @param exception should not be null
    */
   public static <V> Exceptional<V> exceptional(Exception exception) {
-    if (exception == null) {
-      throw new IllegalArgumentException();
-    }
     return new Exceptional<>(exception);
   }
 
@@ -143,7 +146,8 @@ public final class Exceptional<T> {
   /**
    * @param defaultValue nullable
    */
-  public T getOrDefault(T defaultValue) {
+  @Nullable
+  public T getOrDefault(@Nullable T defaultValue) {
     if (this.thisIsNotValue()) {
       return defaultValue;
     }
@@ -183,7 +187,7 @@ public final class Exceptional<T> {
     this.value = null;
   }
 
-  private Exceptional(T value) {
+  private Exceptional(@Nullable T value) {
     this.value = value;
     this.exception = null;
   }
