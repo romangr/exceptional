@@ -1,5 +1,6 @@
 package ru.romangr.exceptional;
 
+import java.util.Objects;
 import javax.annotation.Nullable;
 import ru.romangr.exceptional.nullability.NonNullApi;
 import ru.romangr.exceptional.type.ExceptionalFunction;
@@ -144,14 +145,13 @@ public final class Exceptional<T> {
   }
 
   /**
-   * @param defaultValue nullable
+   * @param defaultValue should be not null
    */
-  @Nullable
-  public T getOrDefault(@Nullable T defaultValue) {
+  public T getOrDefault(T defaultValue) {
     if (this.thisIsNotValue()) {
       return defaultValue;
     }
-    return this.value;
+    return Objects.requireNonNull(this.value);
   }
 
   /**
