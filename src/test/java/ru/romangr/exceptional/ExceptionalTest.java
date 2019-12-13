@@ -1,13 +1,12 @@
 package ru.romangr.exceptional;
 
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @Tag("unit")
 class ExceptionalTest {
@@ -406,8 +405,8 @@ class ExceptionalTest {
     final List<Exception> exceptions = new ArrayList<>(1);
 
     Exceptional.<String>exceptional(newException())
-            .handleException(exceptions::add)
-            .handleException(exceptions::add);
+        .handleException(exceptions::add)
+        .handleException(exceptions::add);
 
     assertThat(exceptions).hasSize(1);
   }
@@ -417,10 +416,10 @@ class ExceptionalTest {
     final List<Exception> exceptions = new ArrayList<>(1);
 
     Exceptional.<String>exceptional(newException())
-            .handleException(e -> {
-              throw newException();
-            })
-            .handleException(exceptions::add);
+        .handleException(e -> {
+          throw newException();
+        })
+        .handleException(exceptions::add);
 
     assertThat(exceptions).hasSize(1);
   }
@@ -430,8 +429,8 @@ class ExceptionalTest {
     final List<Exception> exceptions = new ArrayList<>(0);
 
     Exceptional.exceptional("test")
-            .handleException(exceptions::add)
-            .handleException(exceptions::add);
+        .handleException(exceptions::add)
+        .handleException(exceptions::add);
 
     assertThat(exceptions).isEmpty();
   }
