@@ -4,10 +4,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.Callable;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -405,47 +402,38 @@ class ExceptionalTest {
   }
 
   @Test
-  void getExceptionalWithSuccessOnRetry() {
-    List<Callable<String>> callables = Arrays.asList(
-        () -> {
-          throw newException();
-        },
-        () -> {
-          throw newException();
-        },
-        () -> "test"
-    );
-    Iterator<Callable<String>> callableIterator = callables.iterator();
-    Exceptional<String> exceptional = Exceptional
-        .getExceptional(() -> callableIterator.next().call(), 3);
+  void handleException() {
+    final List<Exception> exceptions = new ArrayList<>(1);
 
-    assertThat(exceptional).isNotNull();
-    assertThat(exceptional.isValuePresent()).isTrue();
-    assertThat(exceptional.getValue()).isEqualTo("test");
-    assertThat(callableIterator.hasNext()).isFalse();
+    Exceptional.<String>exceptional(newException())
+            .handleException(exceptions::add)
+            .handleException(exceptions::add);
+
+    assertThat(exceptions).hasSize(1);
   }
 
   @Test
-  void getExceptionalWithFailureOnRetry() {
-    List<Callable<String>> callables = Arrays.asList(
-        () -> {
-          throw newException();
-        },
-        () -> {
-          throw newException();
-        },
-        () -> {
-          throw newException();
-        }
-    );
-    Iterator<Callable<String>> callableIterator = callables.iterator();
-    Exceptional<String> exceptional = Exceptional
-        .getExceptional(() -> callableIterator.next().call(), 3);
+  void handleExceptionWithException() {
+    final List<Exception> exceptions = new ArrayList<>(1);
 
-    assertThat(exceptional).isNotNull();
-    assertThat(exceptional.isException()).isTrue();
-    assertThat(exceptional.getException()).isInstanceOf(RuntimeException.class);
-    assertThat(callableIterator.hasNext()).isFalse();
+    Exceptional.<String>exceptional(newException())
+            .handleException(e -> {
+              throw newException();
+            })
+            .handleException(exceptions::add);
+
+    assertThat(exceptions).hasSize(1);
+  }
+
+  @Test
+  void handleExceptionNoException() {
+    final List<Exception> exceptions = new ArrayList<>(0);
+
+    Exceptional.exceptional("test")
+            .handleException(exceptions::add)
+            .handleException(exceptions::add);
+
+    assertThat(exceptions).isEmpty();
   }
 
   private RuntimeException newException() {
