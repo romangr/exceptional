@@ -75,9 +75,6 @@ dependencies {
 }
 
 signing {
-  def signingKey = findProperty("signingKey") as String
-  def signingPassword = findProperty("signingPassword") as String
-  useInMemoryPgpKeys(signingKey, signingPassword)
   sign publishing.publications.maven
 }
 
@@ -86,4 +83,8 @@ test {
     includeTags 'unit'
     includeEngines 'junit-jupiter'
   }
+}
+
+tasks.withType(GenerateModuleMetadata) {
+  enabled = false
 }
