@@ -11,4 +11,4 @@ jobs:
       if: branch = master AND type = push
       script:
         - set -e
-        - ./gradlew publishMavenPublicationToMavenRepository
+        - ./gradlew publishMavenPublicationToMavenRepository --stacktrace
