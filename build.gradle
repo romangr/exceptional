@@ -1,5 +1,8 @@
 plugins {
-    id 'java'
+  id 'java'
+  id 'java-library'
+  id 'maven-publish'
+  id 'signing'
 }
 
 group 'ru.romangr'
@@ -7,20 +10,80 @@ version '0.1.0-SNAPSHOT'
 
 sourceCompatibility = 1.8
 
+java {
+  withJavadocJar()
+  withSourcesJar()
+}
+
 repositories {
-    mavenCentral()
+  mavenCentral()
+}
+
+publishing {
+  publications {
+    maven(MavenPublication) {
+      artifactId 'exceptional'
+      pom {
+        name = "${group}:${artifactId}"
+        description = 'Exceptional is a small util to simplify error handling in Java'
+        url = 'https://github.com/romangr/exceptional'
+
+        licenses {
+          license {
+            name = 'MIT License'
+            url = 'https://github.com/romangr/exceptional/blob/master/LICENSE'
+          }
+        }
+
+        developers {
+          developer {
+            id = 'romangr'
+            name = 'Roman Golovin'
+            email = 'roman_gr@mail.com'
+            url = 'https://github.com/romangr'
+          }
+        }
+
+        scm {
+          connection = 'scm:git:git://github.com/romangr/exceptional.git'
+          developerConnection = 'scm:git:ssh://github.com:romangr/exceptional.git'
+          url = 'https://github.com/romangr/exceptional'
+        }
+      }
+
+      from components.java
+    }
+  }
+  repositories {
+    maven {
+      def releasesRepoUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+      def snapshotsRepoUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
+      url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+      credentials (PasswordCredentials) {
+        username = findProperty("ossrhUsername")
+        password = findProperty("ossrhPassword")
+      }
+    }
+  }
 }
 
 dependencies {
-    compileOnly('com.google.code.findbugs:jsr305:3.0.2')
-    testImplementation('org.junit.jupiter:junit-jupiter-api:5.2.0')
-    testImplementation('org.assertj:assertj-core:3.10.0')
-    testRuntime('org.junit.jupiter:junit-jupiter-engine:5.2.0')
+  compileOnly('com.google.code.findbugs:jsr305:3.0.2')
+  testImplementation('org.junit.jupiter:junit-jupiter-api:5.2.0')
+  testImplementation('org.assertj:assertj-core:3.10.0')
+  testRuntime('org.junit.jupiter:junit-jupiter-engine:5.2.0')
+}
+
+signing {
+  def signingKey = findProperty("signingKey") as String
+  def signingPassword = findProperty("signingPassword") as String
+  useInMemoryPgpKeys(signingKey, signingPassword)
+  sign publishing.publications.maven
 }
 
 test {
-    useJUnitPlatform {
-        includeTags 'unit'
-        includeEngines 'junit-jupiter'
-    }
+  useJUnitPlatform {
+    includeTags 'unit'
+    includeEngines 'junit-jupiter'
+  }
 }

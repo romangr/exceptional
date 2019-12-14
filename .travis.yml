@@ -1,1 +1,14 @@
 language: java
+
+jobs:
+  include:
+    - stage: "Build and Publishing"
+      name: "Build"
+      script:
+        - set -e
+        - ./gradlew build
+    - name: "Publish to Maven Central"
+      if: branch = master AND type = push
+      script:
+        - set -e
+        - ./gradlew publishMavenPublicationToMavenRepository
