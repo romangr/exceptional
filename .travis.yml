@@ -15,7 +15,7 @@ jobs:
       if: branch = master AND type = push
       script:
         - set -e
-        - "./gradlew bintrayPublish"
+        - "./gradlew bintrayUpload"
 before_install:
   - openssl aes-256-cbc -K $encrypted_17192d17e098_key -iv $encrypted_17192d17e098_iv -in encrypted.tar.enc -out encrypted.tar -d
   - tar xvf encrypted.tar
