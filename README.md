@@ -1,4 +1,4 @@
-# exceptional ![build status](https://api.travis-ci.com/romangr/exceptional.svg?branch=master)
+# exceptional ![build status](https://api.travis-ci.com/romangr/exceptional.svg?branch=master) [ ![Download](https://api.bintray.com/packages/romangr/java-libs/exceptional/images/download.svg) ](https://bintray.com/romangr/java-libs/exceptional/_latestVersion)
 
 Exceptional is a small util to simplify error handling in Java.
 
