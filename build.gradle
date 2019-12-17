@@ -4,10 +4,15 @@ plugins {
   id 'maven-publish'
   id 'signing'
   id 'jacoco'
+  id "com.jfrog.bintray" version '1.8.4'
+}
+
+ext {
+  exceptionalVersion = '0.2.0'
 }
 
 group 'ru.romangr'
-version '0.2.0-SNAPSHOT'
+version exceptionalVersion
 
 sourceCompatibility = 1.8
 
@@ -17,7 +22,7 @@ java {
 }
 
 repositories {
-  mavenCentral()
+  jcenter()
 }
 
 publishing {
@@ -64,6 +69,23 @@ publishing {
         username = findProperty("ossrhUsername")
         password = findProperty("ossrhPassword")
       }
+    }
+  }
+}
+
+bintray {
+  user = findProperty('bintrayUsername')
+  key = findProperty('bintray_api_key')
+  publications = ['maven']
+  repositories {
+    pkg {
+      repo = 'java-libs'
+      name = 'exceptional'
+      version {
+        name = exceptionalVersion
+      }
+      licenses = ['MIT']
+      vcsUrl = 'https://github.com/romangr/exceptional.git'
     }
   }
 }
