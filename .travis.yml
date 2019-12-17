@@ -10,7 +10,12 @@ jobs:
       if: branch = master AND type = push
       script:
         - set -e
-        - "./gradlew publishMavenPublicationToMavenRepository --stacktrace"
+        - "./gradlew publishMavenPublicationToMavenRepository"
+    - name: Publish to Bintray
+      if: branch = master AND type = push
+      script:
+        - set -e
+        - "./gradlew bintrayPublish"
 before_install:
-  - openssl aes-256-cbc -K $encrypted_91af85ef319a_key -iv $encrypted_91af85ef319a_iv -in encrypted.tar.enc -out encrypted.tar -d
+  - openssl aes-256-cbc -K $encrypted_17192d17e098_key -iv $encrypted_17192d17e098_iv -in encrypted.tar.enc -out encrypted.tar -d
   - tar xvf encrypted.tar

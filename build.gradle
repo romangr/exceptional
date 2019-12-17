@@ -3,10 +3,16 @@ plugins {
   id 'java-library'
   id 'maven-publish'
   id 'signing'
+  id 'jacoco'
+  id "com.jfrog.bintray" version '1.8.4'
+}
+
+ext {
+  exceptionalVersion = '0.2.0'
 }
 
 group 'ru.romangr'
-version '0.1.0-SNAPSHOT'
+version exceptionalVersion
 
 sourceCompatibility = 1.8
 
@@ -16,7 +22,7 @@ java {
 }
 
 repositories {
-  mavenCentral()
+  jcenter()
 }
 
 publishing {
@@ -67,6 +73,23 @@ publishing {
   }
 }
 
+bintray {
+  user = findProperty('bintrayUsername')
+  key = findProperty('bintray_api_key')
+  publications = ['maven']
+  repositories {
+    pkg {
+      repo = 'java-libs'
+      name = 'exceptional'
+      version {
+        name = exceptionalVersion
+      }
+      licenses = ['MIT']
+      vcsUrl = 'https://github.com/romangr/exceptional.git'
+    }
+  }
+}
+
 dependencies {
   compileOnly('com.google.code.findbugs:jsr305:3.0.2')
   testImplementation('org.junit.jupiter:junit-jupiter-api:5.2.0')
@@ -83,8 +106,33 @@ test {
     includeTags 'unit'
     includeEngines 'junit-jupiter'
   }
+  finalizedBy(jacocoTestReport, jacocoTestCoverageVerification)
 }
 
 tasks.withType(GenerateModuleMetadata) {
   enabled = false
+}
+
+jacoco {
+  toolVersion '0.8.4'
+}
+
+jacocoTestReport {
+  reports {
+    xml.enabled false
+    csv.enabled false
+    html.enabled true
+  }
+}
+
+jacocoTestCoverageVerification {
+  violationRules {
+    rule {
+      element = 'CLASS'
+      limit {
+        counter = 'INSTRUCTION'
+        minimum = 0.9
+      }
+    }
+  }
 }
