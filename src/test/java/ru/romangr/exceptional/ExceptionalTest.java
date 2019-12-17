@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
+
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -90,7 +93,7 @@ class ExceptionalTest {
   }
 
   @Test
-  void mapExceptionWithValue() {
+  void resumeOnExceptionWithValue() {
     String s = "test";
     Exceptional<String> exceptional = Exceptional.exceptional(s)
         .resumeOnException(e -> "123")
@@ -102,7 +105,7 @@ class ExceptionalTest {
   }
 
   @Test
-  void mapExceptionWhenEmpty() {
+  void resumeOnExceptionWhenEmpty() {
     String s = null;
     Exceptional<String> exceptional = Exceptional.exceptional(s)
         .resumeOnException(e -> "123")
@@ -114,7 +117,7 @@ class ExceptionalTest {
   }
 
   @Test
-  void mapExceptionWhenException() {
+  void resumeOnExceptionWhenException() {
     Exception exception = newException();
     Exceptional<String> exceptional = Exceptional.exceptional(exception)
         .resumeOnException(e -> "123")
@@ -193,6 +196,25 @@ class ExceptionalTest {
 
     assertThat(exceptional.isException()).isFalse();
     assertThat(exceptional.getValue()).isEqualTo("15");
+  }
+
+  @Test
+  void safelyMapWhenEmpty() {
+    Exceptional<String> exceptional = Exceptional.<String>exceptional(null)
+        .safelyMap(value -> "test");
+
+    assertThat(exceptional.isException()).isFalse();
+    assertThat(exceptional.isValuePresent()).isFalse();
+  }
+
+  @Test
+  void safelyMapWhenException() {
+    Exceptional<String> exceptional = Exceptional.<String>exceptional(newException())
+        .safelyMap(value -> "test");
+
+    assertThat(exceptional.isValuePresent()).isFalse();
+    assertThat(exceptional.isException()).isTrue();
+    assertThat(exceptional.getException()).isInstanceOf(RuntimeException.class);
   }
 
   @Test
@@ -401,6 +423,25 @@ class ExceptionalTest {
   }
 
   @Test
+  void mapExceptionWhenValue() {
+    Exceptional<String> exceptional = Exceptional.exceptional("test")
+        .mapException(IllegalArgumentException::new);
+
+    assertThat(exceptional.isException()).isFalse();
+    assertThat(exceptional.isValuePresent()).isTrue();
+    assertThat(exceptional.getValue()).isEqualTo("test");
+  }
+
+  @Test
+  void mapExceptionWhenEmpty() {
+    Exceptional<String> exceptional = Exceptional.<String>exceptional(null)
+        .mapException(IllegalArgumentException::new);
+
+    assertThat(exceptional.isException()).isFalse();
+    assertThat(exceptional.isValuePresent()).isFalse();
+  }
+
+  @Test
   void handleException() {
     final List<Exception> exceptions = new ArrayList<>(1);
 
@@ -425,6 +466,60 @@ class ExceptionalTest {
   }
 
   @Test
+  void handleExceptionWithMatchedExceptionType() {
+    final List<Exception> exceptions = new ArrayList<>(1);
+
+    Exceptional.<String>exceptional(new IllegalArgumentException())
+        .handleException(IllegalArgumentException.class, exceptions::add)
+        .handleException(IllegalArgumentException.class, exceptions::add);
+
+    assertThat(exceptions).hasSize(1);
+  }
+
+  @Test
+  void handleExceptionWithNotMatchedExceptionType() {
+    final List<Exception> exceptions = new ArrayList<>(1);
+
+    Exceptional.<String>exceptional(new IllegalArgumentException())
+        .handleException(IllegalAccessException.class, exceptions::add);
+
+    assertThat(exceptions).isEmpty();
+  }
+
+  @Test
+  void handleExceptionWithTypeWithException() {
+    final List<Exception> exceptions = new ArrayList<>(1);
+
+    Exceptional.<String>exceptional(new IllegalArgumentException())
+        .handleException(IllegalArgumentException.class, e -> {
+          throw new IllegalAccessException();
+        })
+        .handleException(IllegalAccessException.class, exceptions::add);
+
+    assertThat(exceptions).hasSize(1);
+  }
+
+  @Test
+  void handleExceptionWithTypeWithValue() {
+    final List<Exception> exceptions = new ArrayList<>(1);
+
+    Exceptional.exceptional("test")
+        .handleException(IllegalAccessException.class, exceptions::add);
+
+    assertThat(exceptions).isEmpty();
+  }
+
+  @Test
+  void handleExceptionWithTypeWhenEmpty() {
+    final List<Exception> exceptions = new ArrayList<>(1);
+
+    Exceptional.<String>exceptional(null)
+        .handleException(IllegalAccessException.class, exceptions::add);
+
+    assertThat(exceptions).isEmpty();
+  }
+
+  @Test
   void handleExceptionNoException() {
     final List<Exception> exceptions = new ArrayList<>(0);
 
@@ -433,6 +528,55 @@ class ExceptionalTest {
         .handleException(exceptions::add);
 
     assertThat(exceptions).isEmpty();
+  }
+
+  @Test
+  void asStreamValue() {
+    Stream<String> stream = Exceptional.exceptional("test")
+        .asStream();
+
+    assertThat(stream).containsExactly("test");
+  }
+
+  @Test
+  void asStreamEmpty() {
+    Stream<String> stream = Exceptional.<String>exceptional(null)
+        .asStream();
+
+    assertThat(stream).isEmpty();
+  }
+
+  @Test
+  void asStreamException() {
+    Stream<String> stream = Exceptional.<String>exceptional(newException())
+        .asStream();
+
+    assertThat(stream).isEmpty();
+  }
+
+
+  @Test
+  void asOptionalValue() {
+    Optional<String> optional = Exceptional.exceptional("test")
+        .asOptional();
+
+    assertThat(optional).contains("test");
+  }
+
+  @Test
+  void asOptionalEmpty() {
+    Optional<String> optional = Exceptional.<String>exceptional(null)
+        .asOptional();
+
+    assertThat(optional).isEmpty();
+  }
+
+  @Test
+  void asOptionalException() {
+    Optional<String> optional = Exceptional.<String>exceptional(newException())
+        .asOptional();
+
+    assertThat(optional).isEmpty();
   }
 
   private RuntimeException newException() {

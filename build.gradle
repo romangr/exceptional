@@ -3,10 +3,11 @@ plugins {
   id 'java-library'
   id 'maven-publish'
   id 'signing'
+  id 'jacoco'
 }
 
 group 'ru.romangr'
-version '0.1.0-SNAPSHOT'
+version '0.2.0-SNAPSHOT'
 
 sourceCompatibility = 1.8
 
@@ -83,8 +84,33 @@ test {
     includeTags 'unit'
     includeEngines 'junit-jupiter'
   }
+  finalizedBy(jacocoTestReport, jacocoTestCoverageVerification)
 }
 
 tasks.withType(GenerateModuleMetadata) {
   enabled = false
+}
+
+jacoco {
+  toolVersion '0.8.4'
+}
+
+jacocoTestReport {
+  reports {
+    xml.enabled false
+    csv.enabled false
+    html.enabled true
+  }
+}
+
+jacocoTestCoverageVerification {
+  violationRules {
+    rule {
+      element = 'CLASS'
+      limit {
+        counter = 'INSTRUCTION'
+        minimum = 0.9
+      }
+    }
+  }
 }

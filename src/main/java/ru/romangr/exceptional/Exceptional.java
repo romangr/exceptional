@@ -1,12 +1,16 @@
 package ru.romangr.exceptional;
 
 import ru.romangr.exceptional.nullability.NonNullApi;
+import ru.romangr.exceptional.type.ExceptionalConsumer;
 import ru.romangr.exceptional.type.ExceptionalFunction;
+import ru.romangr.exceptional.type.ExceptionalRunnable;
 import ru.romangr.exceptional.type.ExceptionalSupplier;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import javax.annotation.Nullable;
 
 @NonNullApi
@@ -143,7 +147,7 @@ public final class Exceptional<T> {
    * @return an instance of {@link Exceptional} with value or in empty state or with an exception
    * caught before running this method or with an exception thrown by the runnable.
    */
-  public Exceptional<T> ifEmpty(Runnable runnable) {
+  public Exceptional<T> ifEmpty(ExceptionalRunnable runnable) {
     if (!this.isValuePresent() && !this.isException()) {
       return executeSafely(runnable);
     }
@@ -226,19 +230,38 @@ public final class Exceptional<T> {
   }
 
   /**
-   * Executes some logic using not null exception form the {@link Exceptional} once per the
+   * Executes some logic using not null exception from the {@link Exceptional} once per the
    * exception.
    *
    * @param consumer consumer of the exception.
    * @return an instance of {@link Exceptional} with value or in empty state or with an exception
    * caught before running this method or with an exception thrown by the exception consumer.
    */
-  public Exceptional<T> handleException(Consumer<Exception> consumer) {
+  public Exceptional<T> handleException(ExceptionalConsumer<Exception> consumer) {
     if (!this.isException() || isExceptionHandled) {
       return this;
     }
     this.isExceptionHandled = true;
     return executeSafely(() -> consumer.accept(this.exception));
+  }
+
+  /**
+   * Executes some logic using not null exception from the {@link Exceptional} once per the
+   * exception.
+   *
+   * @param <E> type of exception to handle
+   * @param clazz class of exception to handle
+   * @param consumer consumer of the exception.
+   * @return an instance of {@link Exceptional} with value or in empty state or with an exception
+   * caught before running this method or with an exception thrown by the exception consumer.
+   */
+  @SuppressWarnings("unchecked")
+  public <E extends Exception> Exceptional<T> handleException(Class<E> clazz, ExceptionalConsumer<E> consumer) {
+    if (!this.isException() || isExceptionHandled || !(clazz.isAssignableFrom(exception.getClass()))) {
+      return this;
+    }
+    this.isExceptionHandled = true;
+    return executeSafely(() -> consumer.accept((E) this.exception));
   }
 
   /**
@@ -255,6 +278,25 @@ public final class Exceptional<T> {
     return this.value != null;
   }
 
+  /**
+   * Converts {@link Exceptional} to {@link Stream}.
+   * @return {@link Stream} of the value if it exists, empty {@link Stream} in case of exception or empty state.
+   */
+  public Stream<T> asStream() {
+    if (thisIsNotValue()) {
+      return Stream.empty();
+    }
+    return Stream.of(value);
+  }
+
+  /**
+   * Converts {@link Exceptional} to {@link Optional}.
+   * @return {@link Optional} of the value if it exists, empty {@link Optional} in case of exception or empty state.
+   */
+  public Optional<T> asOptional() {
+    return Optional.ofNullable(value);
+  }
+
   private Exceptional(Exception exception) {
     this.exception = exception;
     this.value = null;
@@ -269,7 +311,7 @@ public final class Exceptional<T> {
     return this.isException() || !this.isValuePresent();
   }
 
-  private Exceptional<T> executeSafely(Runnable runnable) {
+  private Exceptional<T> executeSafely(ExceptionalRunnable runnable) {
     try {
       runnable.run();
       return this;
