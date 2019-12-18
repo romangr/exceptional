@@ -1,19 +1,19 @@
 package ru.romangr.exceptional;
 
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+import javax.annotation.Nullable;
 import ru.romangr.exceptional.nullability.NonNullApi;
 import ru.romangr.exceptional.type.ExceptionalConsumer;
 import ru.romangr.exceptional.type.ExceptionalFunction;
 import ru.romangr.exceptional.type.ExceptionalRunnable;
 import ru.romangr.exceptional.type.ExceptionalSupplier;
+import ru.romangr.exceptional.type.ExceptionalWrappedException;
 
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Stream;
-import javax.annotation.Nullable;
-
-//TODO: flatMapIfEmpty, getOrThrow
 @NonNullApi
 public final class Exceptional<T> {
 
@@ -114,6 +114,21 @@ public final class Exceptional<T> {
   }
 
   /**
+   * Map the value in {@link Exceptional} to a value from another {@link Exceptional} provided by
+   * mapper if this {@link Exceptional} is in empty state. Exceptions in mapper won't be caught.
+   *
+   * @param supplier new {@link Exceptional} instance supplier.
+   * @return an instance of {@link Exceptional} with value or in empty state or with an exception
+   * caught before mapping or with exception from the {@link Exceptional} mapper returned.
+   */
+  public Exceptional<T> flatMapIfEmpty(Supplier<Exceptional<T>> supplier) {
+    if (isEmpty()) {
+      return supplier.get();
+    }
+    return this;
+  }
+
+  /**
    * Executes some logic using not null value form the {@link Exceptional}.
    *
    * @param consumer consumer of the value.
@@ -149,7 +164,7 @@ public final class Exceptional<T> {
    * caught before running this method or with an exception thrown by the runnable.
    */
   public Exceptional<T> ifEmpty(ExceptionalRunnable runnable) {
-    if (!this.isValuePresent() && !this.isException()) {
+    if (isEmpty()) {
       return executeSafely(runnable);
     }
     return this;
@@ -241,7 +256,8 @@ public final class Exceptional<T> {
    * returned by the mapper.
    */
   @SuppressWarnings("unchecked")
-  public <E extends Exception> Exceptional<T> mapException(Class<E> clazz, Function<E, Exception> mapper) {
+  public <E extends Exception> Exceptional<T> mapException(Class<E> clazz,
+      Function<E, Exception> mapper) {
     if (!this.isException() || !clazz.isAssignableFrom(this.exception.getClass())) {
       return this;
     }
@@ -275,8 +291,10 @@ public final class Exceptional<T> {
    * caught before running this method or with an exception thrown by the exception consumer.
    */
   @SuppressWarnings("unchecked")
-  public <E extends Exception> Exceptional<T> handleException(Class<E> clazz, ExceptionalConsumer<E> consumer) {
-    if (!this.isException() || isExceptionHandled || !(clazz.isAssignableFrom(exception.getClass()))) {
+  public <E extends Exception> Exceptional<T> handleException(Class<E> clazz,
+      ExceptionalConsumer<E> consumer) {
+    if (!this.isException() || isExceptionHandled || !(clazz
+        .isAssignableFrom(exception.getClass()))) {
       return this;
     }
     this.isExceptionHandled = true;
@@ -299,7 +317,9 @@ public final class Exceptional<T> {
 
   /**
    * Converts {@link Exceptional} to {@link Stream}.
-   * @return {@link Stream} of the value if it exists, empty {@link Stream} in case of exception or empty state.
+   *
+   * @return {@link Stream} of the value if it exists, empty {@link Stream} in case of exception or
+   * empty state.
    */
   public Stream<T> asStream() {
     if (thisIsNotValue()) {
@@ -310,10 +330,31 @@ public final class Exceptional<T> {
 
   /**
    * Converts {@link Exceptional} to {@link Optional}.
-   * @return {@link Optional} of the value if it exists, empty {@link Optional} in case of exception or empty state.
+   *
+   * @return {@link Optional} of the value if it exists, empty {@link Optional} in case of exception
+   * or empty state.
    */
   public Optional<T> asOptional() {
     return Optional.ofNullable(value);
+  }
+
+  /**
+   * Sometimes it's needed to integrate {@link Exceptional}-based API with APIs that expect
+   * exception to be thrown. This method can be used for that. If {@link Exceptional} contains
+   * exception, thrown {@link ExceptionalWrappedException} will contain this exception as a cause.
+   *
+   * @return value from the {@link Exceptional} if it is present.
+   * @throws NullPointerException if {@link Exceptional} is empty.
+   * @throws ExceptionalWrappedException if {@link Exceptional} contains exception.
+   */
+  public T getOrThrow() throws ExceptionalWrappedException, NullPointerException {
+    if (this.isValuePresent()) {
+      return this.value;
+    }
+    if (this.isException()) {
+      throw new ExceptionalWrappedException(this.exception);
+    }
+    throw new NullPointerException("Exceptional is empty");
   }
 
   private Exceptional(Exception exception) {
@@ -337,5 +378,9 @@ public final class Exceptional<T> {
     } catch (Exception e) {
       return new Exceptional<>(e);
     }
+  }
+
+  private boolean isEmpty() {
+    return !this.isValuePresent() && !this.isException();
   }
 }

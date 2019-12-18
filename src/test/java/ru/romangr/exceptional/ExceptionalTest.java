@@ -1,6 +1,7 @@
 package ru.romangr.exceptional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
@@ -10,6 +11,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import ru.romangr.exceptional.type.ExceptionalWrappedException;
 
 @Tag("unit")
 class ExceptionalTest {
@@ -338,6 +340,77 @@ class ExceptionalTest {
   }
 
   @Test
+  void flatMapIfEmptyToValue() {
+    final List<Integer> integers = new ArrayList<>(1);
+    final List<Exception> exceptions = new ArrayList<>(0);
+    Exceptional.<Integer>exceptional(null)
+        .flatMapIfEmpty(() -> Exceptional.exceptional(100))
+        .ifValue(integers::add);
+
+    assertThat(integers).hasSize(1).contains(100);
+    assertThat(exceptions).hasSize(0);
+  }
+
+  @Test
+  void flatMapIfEmptyToException() {
+    final List<Integer> integers = new ArrayList<>(1);
+    final List<Exception> exceptions = new ArrayList<>(0);
+    Exceptional.<Integer>exceptional(null)
+        .flatMapIfEmpty(() -> Exceptional.exceptional(newException()))
+        .ifValue(integers::add)
+        .ifException(exceptions::add);
+
+    assertThat(integers).hasSize(0);
+    assertThat(exceptions).hasSize(1);
+  }
+
+  @Test
+  void flatMapIfEmptyToEmpty() {
+    final List<Integer> integers = new ArrayList<>(1);
+    final List<Exception> exceptions = new ArrayList<>(0);
+    final List<String> strings = new ArrayList<>(1);
+    Integer i = null;
+    Exceptional.<Integer>exceptional(null)
+        .flatMapIfEmpty(() -> Exceptional.exceptional(i))
+        .ifValue(integers::add)
+        .ifException(exceptions::add)
+        .ifEmpty(() -> strings.add("test"));
+
+    assertThat(strings).hasSize(1).contains("test");
+    assertThat(integers).hasSize(0);
+    assertThat(exceptions).hasSize(0);
+  }
+
+  @Test
+  void flatMapIfEmptyWhenValue() {
+    final List<Exception> exceptions = new ArrayList<>(0);
+    final List<String> strings = new ArrayList<>(1);
+    String s = null;
+    Exceptional.exceptional("test")
+        .flatMapIfEmpty(() -> Exceptional.exceptional("flatMapped"))
+        .ifValue(strings::add)
+        .ifEmpty(() -> strings.add("empty"));
+
+    assertThat(strings).hasSize(1).contains("test");
+    assertThat(exceptions).hasSize(0);
+  }
+
+  @Test
+  void flatMapIfEmptyWhenException() {
+    final List<Exception> exceptions = new ArrayList<>(0);
+    final List<String> strings = new ArrayList<>(1);
+    String s = null;
+    Exceptional.<String>exceptional(newException())
+        .flatMapIfEmpty(() -> Exceptional.exceptional("flatMapped"))
+        .ifValue(strings::add)
+        .ifEmpty(() -> strings.add("empty"))
+        .ifException(e -> strings.add("test"));
+
+    assertThat(strings).hasSize(1).contains("test");
+    assertThat(exceptions).hasSize(0);
+  }
+
+  @Test
   void flatMapToValue() {
     final List<Integer> integers = new ArrayList<>(1);
     final List<Exception> exceptions = new ArrayList<>(0);
@@ -616,6 +689,29 @@ class ExceptionalTest {
         .asOptional();
 
     assertThat(optional).isEmpty();
+  }
+
+  @Test
+  void getOrThrowWhenValue() {
+    String string = Exceptional.exceptional("test").getOrThrow();
+
+    assertThat(string).isEqualTo("test");
+  }
+
+  @Test
+  void getOrThrowWhenException() {
+    assertThatThrownBy(() ->
+        Exceptional.exceptional(new IllegalArgumentException("test")).getOrThrow())
+        .isInstanceOf(ExceptionalWrappedException.class)
+        .hasCauseInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("test");
+  }
+
+  @Test
+  void getOrThrowWhenEmpty() {
+    assertThatThrownBy(() -> Exceptional.exceptional(null).getOrThrow())
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("Exceptional is empty");
   }
 
   private RuntimeException newException() {
