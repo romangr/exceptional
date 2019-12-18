@@ -293,8 +293,8 @@ public final class Exceptional<T> {
   @SuppressWarnings("unchecked")
   public <E extends Exception> Exceptional<T> handleException(Class<E> clazz,
       ExceptionalConsumer<E> consumer) {
-    if (!this.isException() || isExceptionHandled || !(clazz
-        .isAssignableFrom(exception.getClass()))) {
+    if (!this.isException() || isExceptionHandled
+        || !(clazz.isAssignableFrom(exception.getClass()))) {
       return this;
     }
     this.isExceptionHandled = true;
