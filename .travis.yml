@@ -5,7 +5,8 @@ jobs:
       name: Build
       script:
         - set -e
-        - "./gradlew build jacocoTestReport jacocoTestCoverageVerification coveralls"
+        - "./gradlew build jacocoTestReport jacocoTestCoverageVerification"
+        - "./gradlew reportCoveralls -Djdk.tls.client.protocols=\"TLSv1,TLSv1.1,TLSv1.2\""
     - name: Publish to Maven Central
       if: branch = master AND type = push
       script:

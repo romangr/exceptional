@@ -139,3 +139,7 @@ jacocoTestCoverageVerification {
     }
   }
 }
+
+task reportCoveralls {
+  finalizedBy(tasks.coveralls)
+}
