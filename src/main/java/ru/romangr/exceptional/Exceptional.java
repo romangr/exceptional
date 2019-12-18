@@ -13,6 +13,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 
+//TODO: flatMapIfEmpty, getOrThrow
 @NonNullApi
 public final class Exceptional<T> {
 
