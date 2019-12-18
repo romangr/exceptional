@@ -1,5 +1,10 @@
 package ru.romangr.exceptional;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -13,9 +18,12 @@ import ru.romangr.exceptional.type.ExceptionalFunction;
 import ru.romangr.exceptional.type.ExceptionalRunnable;
 import ru.romangr.exceptional.type.ExceptionalSupplier;
 import ru.romangr.exceptional.type.ExceptionalWrappedException;
+import ru.romangr.exceptional.type.ProcessingResult;
 
 @NonNullApi
 public final class Exceptional<T> {
+
+  private static final Exceptional<?> EMPTY_INSTANCE = exceptional((Object) null);
 
   @Nullable
   private final Exception exception;
@@ -60,6 +68,31 @@ public final class Exceptional<T> {
    */
   public static <V> Exceptional<V> exceptional(Exception exception) {
     return new Exceptional<>(exception);
+  }
+
+  public static <E, C> Exceptional<ProcessingResult<E>> processCollection(Collection<C> collection,
+      Function<? super C, Exceptional<E>> mapper) {
+    Iterator<C> iterator = collection.iterator();
+    if (!iterator.hasNext()) {
+      return exceptional(new ProcessingResult<>(Collections.emptyList(), null));
+    }
+    List<E> successResults = new ArrayList<>(collection.size());
+    do {
+      C element = iterator.next();
+      Exceptional<E> result = mapper.apply(element);
+      if (result.isValuePresent()) {
+        successResults.add(result.getValue());
+      }
+      if (result.isException()) {
+        return exceptional(new ProcessingResult<>(successResults, result.getException()));
+      }
+    } while (iterator.hasNext());
+    return exceptional(new ProcessingResult<>(successResults, null));
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <E> Exceptional<E> empty() {
+    return (Exceptional<E>) EMPTY_INSTANCE;
   }
 
   /**
@@ -357,6 +390,10 @@ public final class Exceptional<T> {
     throw new NullPointerException("Exceptional is empty");
   }
 
+  public boolean isEmpty() {
+    return !this.isValuePresent() && !this.isException();
+  }
+
   private Exceptional(Exception exception) {
     this.exception = exception;
     this.value = null;
@@ -378,9 +415,5 @@ public final class Exceptional<T> {
     } catch (Exception e) {
       return new Exceptional<>(e);
     }
-  }
-
-  private boolean isEmpty() {
-    return !this.isValuePresent() && !this.isException();
   }
 }

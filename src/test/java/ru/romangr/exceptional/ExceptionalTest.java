@@ -5,13 +5,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import ru.romangr.exceptional.type.ExceptionalWrappedException;
+import ru.romangr.exceptional.type.ProcessingResult;
 
 @Tag("unit")
 class ExceptionalTest {
@@ -712,6 +717,47 @@ class ExceptionalTest {
     assertThatThrownBy(() -> Exceptional.exceptional(null).getOrThrow())
         .isInstanceOf(NullPointerException.class)
         .hasMessage("Exceptional is empty");
+  }
+
+  @Test
+  void processCollection() {
+    Collection<Supplier<String>> collection = Arrays.asList(
+        () -> "test1",
+        () -> "test2",
+        () -> "test3"
+    );
+    Exceptional<ProcessingResult<String>> result =
+        Exceptional.processCollection(collection, e -> Exceptional.getExceptional(e::get));
+
+    assertThat(result.getValue().successResults()).containsExactlyInAnyOrder("test1", "test2", "test3");
+    assertThat(result.getValue().exception().isEmpty()).isTrue();
+  }
+
+  @Test
+  void processEmptyCollection() {
+    Collection<Supplier<String>> collection = Collections.emptyList();
+    Exceptional<ProcessingResult<String>> result =
+        Exceptional.processCollection(collection, e -> Exceptional.getExceptional(e::get));
+
+    assertThat(result.getValue().successResults()).isNotNull().isEmpty();
+    assertThat(result.getValue().exception().isEmpty()).isTrue();
+  }
+
+  @Test
+  void processCollectionWithException() {
+    Collection<Supplier<String>> collection = Arrays.asList(
+        () -> "test1",
+        () -> "test2",
+        () -> {
+          throw newException();
+        },
+        () -> "test3"
+    );
+    Exceptional<ProcessingResult<String>> result =
+        Exceptional.processCollection(collection, e -> Exceptional.getExceptional(e::get));
+
+    assertThat(result.getValue().successResults()).containsExactlyInAnyOrder("test1", "test2");
+    assertThat(result.getValue().exception().getException()).isInstanceOf(RuntimeException.class);
   }
 
   private RuntimeException newException() {
