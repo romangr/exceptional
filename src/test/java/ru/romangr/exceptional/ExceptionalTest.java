@@ -442,6 +442,45 @@ class ExceptionalTest {
   }
 
   @Test
+  void mapExceptionByType() {
+    Exceptional<String> exceptional = Exceptional.<String>exceptional(new IllegalStateException())
+        .mapException(IllegalStateException.class, IllegalArgumentException::new);
+
+    assertThat(exceptional.getException())
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasCauseInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  void mapExceptionByTypeWhenValue() {
+    Exceptional<String> exceptional = Exceptional.exceptional("test")
+        .mapException(IllegalStateException.class, IllegalArgumentException::new);
+
+    assertThat(exceptional.isException()).isFalse();
+    assertThat(exceptional.isValuePresent()).isTrue();
+    assertThat(exceptional.getValue()).isEqualTo("test");
+  }
+
+  @Test
+  void mapExceptionByTypeWhenEmpty() {
+    Exceptional<String> exceptional = Exceptional.<String>exceptional(null)
+        .mapException(IllegalStateException.class, IllegalArgumentException::new);
+
+    assertThat(exceptional.isException()).isFalse();
+    assertThat(exceptional.isValuePresent()).isFalse();
+  }
+
+  @Test
+  void mapExceptionByTypeNotMatched() {
+    Exceptional<String> exceptional = Exceptional.<String>exceptional(new IllegalStateException())
+        .mapException(IllegalAccessException.class, IllegalArgumentException::new);
+
+    assertThat(exceptional.getException())
+        .isInstanceOf(IllegalStateException.class)
+        .hasNoCause();
+  }
+
+  @Test
   void handleException() {
     final List<Exception> exceptions = new ArrayList<>(1);
 

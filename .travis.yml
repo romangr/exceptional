@@ -5,7 +5,7 @@ jobs:
       name: Build
       script:
         - set -e
-        - "./gradlew build"
+        - "./gradlew build jacocoTestReport jacocoTestCoverageVerification coveralls"
     - name: Publish to Maven Central
       if: branch = master AND type = push
       script:

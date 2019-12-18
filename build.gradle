@@ -9,7 +9,7 @@ plugins {
 }
 
 ext {
-  exceptionalVersion = '0.2.0'
+  exceptionalVersion = '0.3.0-SNAPSHOT'
 }
 
 group 'ru.romangr'
@@ -110,7 +110,6 @@ test {
     includeTags 'unit'
     includeEngines 'junit-jupiter'
   }
-  finalizedBy(jacocoTestReport, jacocoTestCoverageVerification, tasks.coveralls)
 }
 
 tasks.withType(GenerateModuleMetadata) {

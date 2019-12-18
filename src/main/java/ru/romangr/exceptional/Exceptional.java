@@ -230,6 +230,24 @@ public final class Exceptional<T> {
   }
 
   /**
+   * Map the exception in the {@link Exceptional} to some other exception. Exceptions in mapper
+   * won't be caught.
+   *
+   * @param <E> type of exception to map
+   * @param clazz class of exception to apply mapper to
+   * @param mapper to get a new exception
+   * @return an instance of {@link Exceptional} with value or in empty state or with an exception
+   * returned by the mapper.
+   */
+  @SuppressWarnings("unchecked")
+  public <E extends Exception> Exceptional<T> mapException(Class<E> clazz, Function<E, Exception> mapper) {
+    if (!this.isException() || !clazz.isAssignableFrom(this.exception.getClass())) {
+      return this;
+    }
+    return exceptional(mapper.apply((E) this.exception));
+  }
+
+  /**
    * Executes some logic using not null exception from the {@link Exceptional} once per the
    * exception.
    *
