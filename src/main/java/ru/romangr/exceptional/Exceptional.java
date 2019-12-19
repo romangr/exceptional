@@ -190,6 +190,21 @@ public final class Exceptional<T> {
   }
 
   /**
+   * Executes some logic using not null exception form the {@link Exceptional}.
+   *
+   * @param consumer consumer of the exception.
+   * @return an instance of {@link Exceptional} with value or in empty state or with an exception
+   * caught before running this method or with an exception thrown by the exception consumer.
+   */
+  @SuppressWarnings("unchecked")
+  public <E extends Exception> Exceptional<T> ifException(Class<E> clazz, Consumer<E> consumer) {
+    if (this.isException() && clazz.isAssignableFrom(this.exception.getClass())) {
+      return executeSafely(() -> consumer.accept((E) this.exception));
+    }
+    return this;
+  }
+
+  /**
    * Executes some logic if the {@link Exceptional} is in empty state.
    *
    * @param runnable to execute

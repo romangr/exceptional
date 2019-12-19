@@ -305,6 +305,63 @@ class ExceptionalTest {
   }
 
   @Test
+  void ifExceptionByType() {
+    final List<Exception> exceptions = new ArrayList<>(1);
+    Exceptional.<String>exceptional(new IllegalArgumentException())
+        .ifException(RuntimeException.class, exceptions::add);
+
+    assertThat(exceptions).hasSize(1);
+  }
+
+  @Test
+  void ifExceptionByTypeNotMatched() {
+    final List<Exception> exceptions = new ArrayList<>(1);
+    Exceptional.<String>exceptional(new IllegalArgumentException())
+        .ifException(IllegalStateException.class, exceptions::add);
+
+    assertThat(exceptions).isEmpty();
+  }
+
+  @Test
+  void ifExceptionByTypeWhenValue() {
+    final List<Exception> exceptions = new ArrayList<>(1);
+    final List<String> strings = new ArrayList<>();
+
+    Exceptional.exceptional("test")
+        .ifException(RuntimeException.class, exceptions::add)
+        .ifValue(strings::add);
+
+    assertThat(exceptions).isEmpty();
+    assertThat(strings).containsExactly("test");
+  }
+
+  @Test
+  void ifExceptionByTypeWhenEmpty() {
+    final List<Exception> exceptions = new ArrayList<>(1);
+    final List<String> strings = new ArrayList<>();
+
+    Exceptional.<String>exceptional(null)
+        .ifException(RuntimeException.class, exceptions::add)
+        .ifEmpty(() -> strings.add("test"));
+
+    assertThat(exceptions).isEmpty();
+    assertThat(strings).containsExactly("test");
+  }
+
+  @Test
+  void ifExceptionByTypeSafety() {
+    final List<Exception> exceptions = new ArrayList<>(1);
+    Exceptional.<String>exceptional(new RuntimeException("Test1")).ifException(RuntimeException.class, e -> {
+      exceptions.add(e);
+      throw new RuntimeException("Test2");
+    }).ifException(RuntimeException.class, exceptions::add);
+
+    assertThat(exceptions).hasSize(2)
+        .anyMatch(e -> e.getMessage().equals("Test1"))
+        .anyMatch(e -> e.getMessage().equals("Test2"));
+  }
+
+  @Test
   void ifEmpty() {
     final List<String> strings = new ArrayList<>(1);
     String s = null;
