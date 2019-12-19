@@ -5,10 +5,11 @@ plugins {
   id 'signing'
   id 'jacoco'
   id "com.jfrog.bintray" version '1.8.4'
+  id 'com.github.kt3k.coveralls' version '2.8.4'
 }
 
 ext {
-  exceptionalVersion = '0.2.0'
+  exceptionalVersion = '0.3.0-SNAPSHOT'
 }
 
 group 'ru.romangr'
@@ -23,6 +24,11 @@ java {
 
 repositories {
   jcenter()
+}
+
+coveralls {
+  saveAsFile = true
+  sendToCoveralls = false
 }
 
 publishing {
@@ -83,6 +89,9 @@ bintray {
       name = 'exceptional'
       version {
         name = exceptionalVersion
+        gpg {
+          sign = true
+        }
       }
       licenses = ['MIT']
       vcsUrl = 'https://github.com/romangr/exceptional.git'
@@ -106,7 +115,6 @@ test {
     includeTags 'unit'
     includeEngines 'junit-jupiter'
   }
-  finalizedBy(jacocoTestReport, jacocoTestCoverageVerification)
 }
 
 tasks.withType(GenerateModuleMetadata) {
@@ -119,7 +127,7 @@ jacoco {
 
 jacocoTestReport {
   reports {
-    xml.enabled false
+    xml.enabled true
     csv.enabled false
     html.enabled true
   }
@@ -135,4 +143,8 @@ jacocoTestCoverageVerification {
       }
     }
   }
+}
+
+task reportCoveralls {
+  finalizedBy(tasks.coveralls)
 }

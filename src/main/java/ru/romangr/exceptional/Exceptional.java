@@ -1,20 +1,29 @@
 package ru.romangr.exceptional;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+import javax.annotation.Nullable;
 import ru.romangr.exceptional.nullability.NonNullApi;
 import ru.romangr.exceptional.type.ExceptionalConsumer;
 import ru.romangr.exceptional.type.ExceptionalFunction;
 import ru.romangr.exceptional.type.ExceptionalRunnable;
 import ru.romangr.exceptional.type.ExceptionalSupplier;
-
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Stream;
-import javax.annotation.Nullable;
+import ru.romangr.exceptional.type.ExceptionalWrappedException;
+import ru.romangr.exceptional.type.ProcessingResult;
 
 @NonNullApi
 public final class Exceptional<T> {
+
+  private static final Exceptional<?> EMPTY_INSTANCE = exceptional((Object) null);
 
   @Nullable
   private final Exception exception;
@@ -59,6 +68,31 @@ public final class Exceptional<T> {
    */
   public static <V> Exceptional<V> exceptional(Exception exception) {
     return new Exceptional<>(exception);
+  }
+
+  public static <E, C> Exceptional<ProcessingResult<E>> processCollection(Collection<C> collection,
+      Function<? super C, Exceptional<E>> mapper) {
+    Iterator<C> iterator = collection.iterator();
+    if (!iterator.hasNext()) {
+      return exceptional(new ProcessingResult<>(Collections.emptyList(), null));
+    }
+    List<E> successResults = new ArrayList<>(collection.size());
+    do {
+      C element = iterator.next();
+      Exceptional<E> result = mapper.apply(element);
+      if (result.isValuePresent()) {
+        successResults.add(result.getValue());
+      }
+      if (result.isException()) {
+        return exceptional(new ProcessingResult<>(successResults, result.getException()));
+      }
+    } while (iterator.hasNext());
+    return exceptional(new ProcessingResult<>(successResults, null));
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <E> Exceptional<E> empty() {
+    return (Exceptional<E>) EMPTY_INSTANCE;
   }
 
   /**
@@ -113,6 +147,21 @@ public final class Exceptional<T> {
   }
 
   /**
+   * Map the value in {@link Exceptional} to a value from another {@link Exceptional} provided by
+   * mapper if this {@link Exceptional} is in empty state. Exceptions in mapper won't be caught.
+   *
+   * @param supplier new {@link Exceptional} instance supplier.
+   * @return an instance of {@link Exceptional} with value or in empty state or with an exception
+   * caught before mapping or with exception from the {@link Exceptional} mapper returned.
+   */
+  public Exceptional<T> flatMapIfEmpty(Supplier<Exceptional<T>> supplier) {
+    if (isEmpty()) {
+      return supplier.get();
+    }
+    return this;
+  }
+
+  /**
    * Executes some logic using not null value form the {@link Exceptional}.
    *
    * @param consumer consumer of the value.
@@ -141,6 +190,21 @@ public final class Exceptional<T> {
   }
 
   /**
+   * Executes some logic using not null exception form the {@link Exceptional}.
+   *
+   * @param consumer consumer of the exception.
+   * @return an instance of {@link Exceptional} with value or in empty state or with an exception
+   * caught before running this method or with an exception thrown by the exception consumer.
+   */
+  @SuppressWarnings("unchecked")
+  public <E extends Exception> Exceptional<T> ifException(Class<E> clazz, Consumer<E> consumer) {
+    if (this.isException() && clazz.isAssignableFrom(this.exception.getClass())) {
+      return executeSafely(() -> consumer.accept((E) this.exception));
+    }
+    return this;
+  }
+
+  /**
    * Executes some logic if the {@link Exceptional} is in empty state.
    *
    * @param runnable to execute
@@ -148,7 +212,7 @@ public final class Exceptional<T> {
    * caught before running this method or with an exception thrown by the runnable.
    */
   public Exceptional<T> ifEmpty(ExceptionalRunnable runnable) {
-    if (!this.isValuePresent() && !this.isException()) {
+    if (isEmpty()) {
       return executeSafely(runnable);
     }
     return this;
@@ -230,6 +294,25 @@ public final class Exceptional<T> {
   }
 
   /**
+   * Map the exception in the {@link Exceptional} to some other exception. Exceptions in mapper
+   * won't be caught.
+   *
+   * @param <E> type of exception to map
+   * @param clazz class of exception to apply mapper to
+   * @param mapper to get a new exception
+   * @return an instance of {@link Exceptional} with value or in empty state or with an exception
+   * returned by the mapper.
+   */
+  @SuppressWarnings("unchecked")
+  public <E extends Exception> Exceptional<T> mapException(Class<E> clazz,
+      Function<E, Exception> mapper) {
+    if (!this.isException() || !clazz.isAssignableFrom(this.exception.getClass())) {
+      return this;
+    }
+    return exceptional(mapper.apply((E) this.exception));
+  }
+
+  /**
    * Executes some logic using not null exception from the {@link Exceptional} once per the
    * exception.
    *
@@ -256,8 +339,10 @@ public final class Exceptional<T> {
    * caught before running this method or with an exception thrown by the exception consumer.
    */
   @SuppressWarnings("unchecked")
-  public <E extends Exception> Exceptional<T> handleException(Class<E> clazz, ExceptionalConsumer<E> consumer) {
-    if (!this.isException() || isExceptionHandled || !(clazz.isAssignableFrom(exception.getClass()))) {
+  public <E extends Exception> Exceptional<T> handleException(Class<E> clazz,
+      ExceptionalConsumer<E> consumer) {
+    if (!this.isException() || isExceptionHandled
+        || !(clazz.isAssignableFrom(exception.getClass()))) {
       return this;
     }
     this.isExceptionHandled = true;
@@ -280,7 +365,9 @@ public final class Exceptional<T> {
 
   /**
    * Converts {@link Exceptional} to {@link Stream}.
-   * @return {@link Stream} of the value if it exists, empty {@link Stream} in case of exception or empty state.
+   *
+   * @return {@link Stream} of the value if it exists, empty {@link Stream} in case of exception or
+   * empty state.
    */
   public Stream<T> asStream() {
     if (thisIsNotValue()) {
@@ -291,10 +378,35 @@ public final class Exceptional<T> {
 
   /**
    * Converts {@link Exceptional} to {@link Optional}.
-   * @return {@link Optional} of the value if it exists, empty {@link Optional} in case of exception or empty state.
+   *
+   * @return {@link Optional} of the value if it exists, empty {@link Optional} in case of exception
+   * or empty state.
    */
   public Optional<T> asOptional() {
     return Optional.ofNullable(value);
+  }
+
+  /**
+   * Sometimes it's needed to integrate {@link Exceptional}-based API with APIs that expect
+   * exception to be thrown. This method can be used for that. If {@link Exceptional} contains
+   * exception, thrown {@link ExceptionalWrappedException} will contain this exception as a cause.
+   *
+   * @return value from the {@link Exceptional} if it is present.
+   * @throws NullPointerException if {@link Exceptional} is empty.
+   * @throws ExceptionalWrappedException if {@link Exceptional} contains exception.
+   */
+  public T getOrThrow() throws ExceptionalWrappedException, NullPointerException {
+    if (this.isValuePresent()) {
+      return this.value;
+    }
+    if (this.isException()) {
+      throw new ExceptionalWrappedException(this.exception);
+    }
+    throw new NullPointerException("Exceptional is empty");
+  }
+
+  public boolean isEmpty() {
+    return !this.isValuePresent() && !this.isException();
   }
 
   private Exceptional(Exception exception) {

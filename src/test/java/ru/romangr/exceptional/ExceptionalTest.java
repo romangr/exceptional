@@ -1,15 +1,22 @@
 package ru.romangr.exceptional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import ru.romangr.exceptional.type.ExceptionalWrappedException;
+import ru.romangr.exceptional.type.ProcessingResult;
 
 @Tag("unit")
 class ExceptionalTest {
@@ -298,6 +305,63 @@ class ExceptionalTest {
   }
 
   @Test
+  void ifExceptionByType() {
+    final List<Exception> exceptions = new ArrayList<>(1);
+    Exceptional.<String>exceptional(new IllegalArgumentException())
+        .ifException(RuntimeException.class, exceptions::add);
+
+    assertThat(exceptions).hasSize(1);
+  }
+
+  @Test
+  void ifExceptionByTypeNotMatched() {
+    final List<Exception> exceptions = new ArrayList<>(1);
+    Exceptional.<String>exceptional(new IllegalArgumentException())
+        .ifException(IllegalStateException.class, exceptions::add);
+
+    assertThat(exceptions).isEmpty();
+  }
+
+  @Test
+  void ifExceptionByTypeWhenValue() {
+    final List<Exception> exceptions = new ArrayList<>(1);
+    final List<String> strings = new ArrayList<>();
+
+    Exceptional.exceptional("test")
+        .ifException(RuntimeException.class, exceptions::add)
+        .ifValue(strings::add);
+
+    assertThat(exceptions).isEmpty();
+    assertThat(strings).containsExactly("test");
+  }
+
+  @Test
+  void ifExceptionByTypeWhenEmpty() {
+    final List<Exception> exceptions = new ArrayList<>(1);
+    final List<String> strings = new ArrayList<>();
+
+    Exceptional.<String>exceptional(null)
+        .ifException(RuntimeException.class, exceptions::add)
+        .ifEmpty(() -> strings.add("test"));
+
+    assertThat(exceptions).isEmpty();
+    assertThat(strings).containsExactly("test");
+  }
+
+  @Test
+  void ifExceptionByTypeSafety() {
+    final List<Exception> exceptions = new ArrayList<>(1);
+    Exceptional.<String>exceptional(new RuntimeException("Test1")).ifException(RuntimeException.class, e -> {
+      exceptions.add(e);
+      throw new RuntimeException("Test2");
+    }).ifException(RuntimeException.class, exceptions::add);
+
+    assertThat(exceptions).hasSize(2)
+        .anyMatch(e -> e.getMessage().equals("Test1"))
+        .anyMatch(e -> e.getMessage().equals("Test2"));
+  }
+
+  @Test
   void ifEmpty() {
     final List<String> strings = new ArrayList<>(1);
     String s = null;
@@ -334,6 +398,77 @@ class ExceptionalTest {
         .ifEmpty(strings::clear);
 
     assertThat(strings).hasSize(2).contains("test", "test");
+    assertThat(exceptions).hasSize(0);
+  }
+
+  @Test
+  void flatMapIfEmptyToValue() {
+    final List<Integer> integers = new ArrayList<>(1);
+    final List<Exception> exceptions = new ArrayList<>(0);
+    Exceptional.<Integer>exceptional(null)
+        .flatMapIfEmpty(() -> Exceptional.exceptional(100))
+        .ifValue(integers::add);
+
+    assertThat(integers).hasSize(1).contains(100);
+    assertThat(exceptions).hasSize(0);
+  }
+
+  @Test
+  void flatMapIfEmptyToException() {
+    final List<Integer> integers = new ArrayList<>(1);
+    final List<Exception> exceptions = new ArrayList<>(0);
+    Exceptional.<Integer>exceptional(null)
+        .flatMapIfEmpty(() -> Exceptional.exceptional(newException()))
+        .ifValue(integers::add)
+        .ifException(exceptions::add);
+
+    assertThat(integers).hasSize(0);
+    assertThat(exceptions).hasSize(1);
+  }
+
+  @Test
+  void flatMapIfEmptyToEmpty() {
+    final List<Integer> integers = new ArrayList<>(1);
+    final List<Exception> exceptions = new ArrayList<>(0);
+    final List<String> strings = new ArrayList<>(1);
+    Integer i = null;
+    Exceptional.<Integer>exceptional(null)
+        .flatMapIfEmpty(() -> Exceptional.exceptional(i))
+        .ifValue(integers::add)
+        .ifException(exceptions::add)
+        .ifEmpty(() -> strings.add("test"));
+
+    assertThat(strings).hasSize(1).contains("test");
+    assertThat(integers).hasSize(0);
+    assertThat(exceptions).hasSize(0);
+  }
+
+  @Test
+  void flatMapIfEmptyWhenValue() {
+    final List<Exception> exceptions = new ArrayList<>(0);
+    final List<String> strings = new ArrayList<>(1);
+    String s = null;
+    Exceptional.exceptional("test")
+        .flatMapIfEmpty(() -> Exceptional.exceptional("flatMapped"))
+        .ifValue(strings::add)
+        .ifEmpty(() -> strings.add("empty"));
+
+    assertThat(strings).hasSize(1).contains("test");
+    assertThat(exceptions).hasSize(0);
+  }
+
+  @Test
+  void flatMapIfEmptyWhenException() {
+    final List<Exception> exceptions = new ArrayList<>(0);
+    final List<String> strings = new ArrayList<>(1);
+    String s = null;
+    Exceptional.<String>exceptional(newException())
+        .flatMapIfEmpty(() -> Exceptional.exceptional("flatMapped"))
+        .ifValue(strings::add)
+        .ifEmpty(() -> strings.add("empty"))
+        .ifException(e -> strings.add("test"));
+
+    assertThat(strings).hasSize(1).contains("test");
     assertThat(exceptions).hasSize(0);
   }
 
@@ -439,6 +574,45 @@ class ExceptionalTest {
 
     assertThat(exceptional.isException()).isFalse();
     assertThat(exceptional.isValuePresent()).isFalse();
+  }
+
+  @Test
+  void mapExceptionByType() {
+    Exceptional<String> exceptional = Exceptional.<String>exceptional(new IllegalStateException())
+        .mapException(IllegalStateException.class, IllegalArgumentException::new);
+
+    assertThat(exceptional.getException())
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasCauseInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  void mapExceptionByTypeWhenValue() {
+    Exceptional<String> exceptional = Exceptional.exceptional("test")
+        .mapException(IllegalStateException.class, IllegalArgumentException::new);
+
+    assertThat(exceptional.isException()).isFalse();
+    assertThat(exceptional.isValuePresent()).isTrue();
+    assertThat(exceptional.getValue()).isEqualTo("test");
+  }
+
+  @Test
+  void mapExceptionByTypeWhenEmpty() {
+    Exceptional<String> exceptional = Exceptional.<String>exceptional(null)
+        .mapException(IllegalStateException.class, IllegalArgumentException::new);
+
+    assertThat(exceptional.isException()).isFalse();
+    assertThat(exceptional.isValuePresent()).isFalse();
+  }
+
+  @Test
+  void mapExceptionByTypeNotMatched() {
+    Exceptional<String> exceptional = Exceptional.<String>exceptional(new IllegalStateException())
+        .mapException(IllegalAccessException.class, IllegalArgumentException::new);
+
+    assertThat(exceptional.getException())
+        .isInstanceOf(IllegalStateException.class)
+        .hasNoCause();
   }
 
   @Test
@@ -577,6 +751,70 @@ class ExceptionalTest {
         .asOptional();
 
     assertThat(optional).isEmpty();
+  }
+
+  @Test
+  void getOrThrowWhenValue() {
+    String string = Exceptional.exceptional("test").getOrThrow();
+
+    assertThat(string).isEqualTo("test");
+  }
+
+  @Test
+  void getOrThrowWhenException() {
+    assertThatThrownBy(() ->
+        Exceptional.exceptional(new IllegalArgumentException("test")).getOrThrow())
+        .isInstanceOf(ExceptionalWrappedException.class)
+        .hasCauseInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("test");
+  }
+
+  @Test
+  void getOrThrowWhenEmpty() {
+    assertThatThrownBy(() -> Exceptional.exceptional(null).getOrThrow())
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("Exceptional is empty");
+  }
+
+  @Test
+  void processCollection() {
+    Collection<Supplier<String>> collection = Arrays.asList(
+        () -> "test1",
+        () -> "test2",
+        () -> "test3"
+    );
+    Exceptional<ProcessingResult<String>> result =
+        Exceptional.processCollection(collection, e -> Exceptional.getExceptional(e::get));
+
+    assertThat(result.getValue().successResults()).containsExactlyInAnyOrder("test1", "test2", "test3");
+    assertThat(result.getValue().exception().isEmpty()).isTrue();
+  }
+
+  @Test
+  void processEmptyCollection() {
+    Collection<Supplier<String>> collection = Collections.emptyList();
+    Exceptional<ProcessingResult<String>> result =
+        Exceptional.processCollection(collection, e -> Exceptional.getExceptional(e::get));
+
+    assertThat(result.getValue().successResults()).isNotNull().isEmpty();
+    assertThat(result.getValue().exception().isEmpty()).isTrue();
+  }
+
+  @Test
+  void processCollectionWithException() {
+    Collection<Supplier<String>> collection = Arrays.asList(
+        () -> "test1",
+        () -> "test2",
+        () -> {
+          throw newException();
+        },
+        () -> "test3"
+    );
+    Exceptional<ProcessingResult<String>> result =
+        Exceptional.processCollection(collection, e -> Exceptional.getExceptional(e::get));
+
+    assertThat(result.getValue().successResults()).containsExactlyInAnyOrder("test1", "test2");
+    assertThat(result.getValue().exception().getException()).isInstanceOf(RuntimeException.class);
   }
 
   private RuntimeException newException() {

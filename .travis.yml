@@ -5,7 +5,9 @@ jobs:
       name: Build
       script:
         - set -e
-        - "./gradlew build"
+        - "./gradlew build jacocoTestReport jacocoTestCoverageVerification"
+        - "./gradlew reportCoveralls"
+        - "curl -F 'json_file=@build/coveralls/report.json' 'https://coveralls.io/api/v1/jobs'"
     - name: Publish to Maven Central
       if: branch = master AND type = push
       script:
@@ -15,7 +17,7 @@ jobs:
       if: branch = master AND type = push
       script:
         - set -e
-        - "./gradlew bintrayPublish"
+        - "./gradlew bintrayUpload"
 before_install:
   - openssl aes-256-cbc -K $encrypted_17192d17e098_key -iv $encrypted_17192d17e098_iv -in encrypted.tar.enc -out encrypted.tar -d
   - tar xvf encrypted.tar
