@@ -26,6 +26,11 @@ repositories {
   jcenter()
 }
 
+coveralls {
+  saveAsFile = true
+  sendToCoveralls = false
+}
+
 publishing {
   publications {
     maven(MavenPublication) {

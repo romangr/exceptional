@@ -6,7 +6,8 @@ jobs:
       script:
         - set -e
         - "./gradlew build jacocoTestReport jacocoTestCoverageVerification"
-        - "./gradlew reportCoveralls -Djdk.tls.client.protocols=\"TLSv1,TLSv1.1,TLSv1.2\""
+        - "./gradlew reportCoveralls"
+        - "curl -F 'json_file=@build/coveralls/report.json' 'https://coveralls.io/api/v1/jobs'"
     - name: Publish to Maven Central
       if: branch = master AND type = push
       script:
