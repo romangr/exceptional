@@ -9,7 +9,7 @@ plugins {
 }
 
 ext {
-  exceptionalVersion = '0.3.0-SNAPSHOT'
+  exceptionalVersion = '0.3.0'
 }
 
 group 'ru.romangr'
