@@ -70,6 +70,11 @@ public final class Exceptional<T> {
     return new Exceptional<>(exception);
   }
 
+  /**
+   * Applies mapper to every collection element until the first return {@link Exceptional} with
+   * exception from mapper.
+   * @return an instance of {@link Exceptional} with {@link ProcessingResult}
+   */
   public static <E, C> Exceptional<ProcessingResult<E>> processCollection(Collection<C> collection,
       Function<? super C, Exceptional<E>> mapper) {
     Iterator<C> iterator = collection.iterator();

@@ -19,10 +19,17 @@ public final class ProcessingResult<T> {
     this.exception = exception;
   }
 
+  /**
+   * @return list of successfully processed elements of collection.
+   */
   public List<T> successResults() {
     return successResults;
   }
 
+  /**
+   * @return an instance of {@link Exceptional} with exception that occurred during collection
+   * processing or empty {@link Exceptional} if no exception occured.
+   */
   public Exceptional<T> exception() {
     return Optional.ofNullable(exception)
         .map(Exceptional::<T>exceptional)
