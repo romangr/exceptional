@@ -21,8 +21,18 @@ import ru.romangr.exceptional.type.ProcessingResult;
 class ExceptionalTest {
 
   @Test
-  void ofValue() {
+  void exceptionalOfValue() {
     Exceptional<String> exceptional = Exceptional.exceptional("test");
+
+    assertThat(exceptional).isNotNull();
+    assertThat(exceptional.isException()).isFalse();
+    assertThat(exceptional.isValuePresent()).isTrue();
+    assertThat(exceptional.getValue()).isEqualTo("test");
+  }
+
+  @Test
+  void ofValue() {
+    Exceptional<String> exceptional = Exceptional.of("test");
 
     assertThat(exceptional).isNotNull();
     assertThat(exceptional.isException()).isFalse();
@@ -33,6 +43,17 @@ class ExceptionalTest {
   @Test
   void ofNullValue() {
     String s = null;
+    Exceptional<String> exceptional = Exceptional.of(s);
+
+    assertThat(exceptional).isNotNull();
+    assertThat(exceptional.isException()).isFalse();
+    assertThat(exceptional.isValuePresent()).isFalse();
+    assertThrows(IllegalStateException.class, exceptional::getValue);
+  }
+
+  @Test
+  void exceptionalOfNullValue() {
+    String s = null;
     Exceptional<String> exceptional = Exceptional.exceptional(s);
 
     assertThat(exceptional).isNotNull();
@@ -42,8 +63,18 @@ class ExceptionalTest {
   }
 
   @Test
-  void ofException() {
+  void exceptionalOfException() {
     Exceptional<Integer> exceptional = Exceptional.exceptional(newException());
+
+    assertThat(exceptional).isNotNull();
+    assertThat(exceptional.isException()).isTrue();
+    assertThat(exceptional.isValuePresent()).isFalse();
+    assertThrows(IllegalStateException.class, exceptional::getValue);
+  }
+
+  @Test
+  void ofException() {
+    Exceptional<Integer> exceptional = Exceptional.of(newException());
 
     assertThat(exceptional).isNotNull();
     assertThat(exceptional.isException()).isTrue();
@@ -144,6 +175,15 @@ class ExceptionalTest {
   }
 
   @Test
+  void attemptOfSupplier() {
+    Exceptional<String> exceptional = Exceptional.attempt(() -> "test");
+
+    assertThat(exceptional).isNotNull();
+    assertThat(exceptional.isException()).isFalse();
+    assertThat(exceptional.getValue()).isEqualTo("test");
+  }
+
+  @Test
   void ofSupplierWithNull() {
     Exceptional<String> exceptional = Exceptional.getExceptional(() -> null);
 
@@ -154,8 +194,29 @@ class ExceptionalTest {
   }
 
   @Test
+  void attemptOfSupplierWithNull() {
+    Exceptional<String> exceptional = Exceptional.attempt(() -> null);
+
+    assertThat(exceptional).isNotNull();
+    assertThat(exceptional.isException()).isFalse();
+    assertThat(exceptional.isValuePresent()).isFalse();
+    assertThrows(IllegalStateException.class, exceptional::getValue);
+  }
+
+  @Test
   void ofSupplierWithException() {
     Exceptional<Integer> exceptional = Exceptional.getExceptional(() -> {
+      throw newException();
+    });
+
+    assertThat(exceptional).isNotNull();
+    assertThat(exceptional.isException()).isTrue();
+    assertThrows(IllegalStateException.class, exceptional::getValue);
+  }
+
+  @Test
+  void attemptOfSupplierWithException() {
+    Exceptional<Integer> exceptional = Exceptional.attempt(() -> {
       throw newException();
     });
 

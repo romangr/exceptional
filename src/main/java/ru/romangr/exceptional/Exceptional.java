@@ -49,6 +49,21 @@ public final class Exceptional<T> {
   }
 
   /**
+   * Get some value from supplier catching all the exceptions.
+   *
+   * @param supplier to get value from.
+   * @param <V> type of the value.
+   * @return an instance of {@link Exceptional} with value or exception or in empty state.
+   */
+  public static <V> Exceptional<V> attempt(ExceptionalSupplier<V> supplier) {
+    try {
+      return Exceptional.exceptional(supplier.get());
+    } catch (Exception e) {
+      return Exceptional.exceptional(e);
+    }
+  }
+
+  /**
    * Wrap null or some value with {@link Exceptional}.
    *
    * @param value to wrap.
@@ -60,6 +75,17 @@ public final class Exceptional<T> {
   }
 
   /**
+   * Wrap null or some value with {@link Exceptional}.
+   *
+   * @param value to wrap.
+   * @param <V> type of the value.
+   * @return an instance of {@link Exceptional} with value or in empty state.
+   */
+  public static <V> Exceptional<V> of(@Nullable V value) {
+    return new Exceptional<>(value);
+  }
+
+  /**
    * Wrap an exception with {@link Exceptional}.
    *
    * @param exception to wrap.
@@ -67,6 +93,17 @@ public final class Exceptional<T> {
    * @return an instance of {@link Exceptional} with exception.
    */
   public static <V> Exceptional<V> exceptional(Exception exception) {
+    return new Exceptional<>(exception);
+  }
+
+  /**
+   * Wrap an exception with {@link Exceptional}.
+   *
+   * @param exception to wrap.
+   * @param <V> type of the exception.
+   * @return an instance of {@link Exceptional} with exception.
+   */
+  public static <V> Exceptional<V> of(Exception exception) {
     return new Exceptional<>(exception);
   }
 
@@ -127,7 +164,7 @@ public final class Exceptional<T> {
    * caught before mapping or with an exception occurred in process of mapping.
    */
   @SuppressWarnings("unchecked")
-  public <V> Exceptional<V> safelyMap(Function<? super T, V> mapper) {
+  public <V> Exceptional<V> safelyMap(ExceptionalFunction<? super T, V> mapper) {
     if (thisIsNotValue()) {
       return (Exceptional<V>) this;
     }
