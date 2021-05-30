@@ -1,4 +1,4 @@
-# exceptional ![build status](https://api.travis-ci.com/romangr/exceptional.svg?branch=master) [![Coverage Status](https://coveralls.io/repos/github/romangr/exceptional/badge.svg)](https://coveralls.io/github/romangr/exceptional) [ ![Download](https://api.bintray.com/packages/romangr/java-libs/exceptional/images/download.svg) ](https://bintray.com/romangr/java-libs/exceptional/_latestVersion) 
+# exceptional ![build status](https://api.travis-ci.com/romangr/exceptional.svg?branch=master) [![Coverage Status](https://coveralls.io/repos/github/romangr/exceptional/badge.svg)](https://coveralls.io/github/romangr/exceptional)
 
 Exceptional is a small util to simplify error handling in Java.
 
@@ -11,10 +11,26 @@ That's how your methods can look like:
 ```java
 class Parser {
   public Exceptional<Integer> parseInteger(String possibleInt) {
-    return Exceptional.getExceptional(() -> Integer.parseInt(possibleInt));
+    return Exceptional.attempt(() -> Integer.parseInt(possibleInt));
   }
 }
 ```
 
 In this example you know `Integer.parseInt` can throw an exception but you don't want to catch it.
 You just need to know if it was parsed or not. Exceptional makes exactly that.
+
+## Available at Maven Central
+
+### Maven
+```xml
+<dependency>
+  <groupId>ru.romangr</groupId>
+  <artifactId>exceptional</artifactId>
+  <version>0.4.0</version>
+</dependency>
+```
+
+### Gradle
+```groovy
+implementation 'ru.romangr:exceptional:0.4.0'
+```

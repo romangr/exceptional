@@ -8,7 +8,7 @@ plugins {
 }
 
 ext {
-  exceptionalVersion = '0.4.0'
+  exceptionalVersion = '0.4.1'
 }
 
 group 'ru.romangr'
