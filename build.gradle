@@ -8,7 +8,7 @@ plugins {
 }
 
 ext {
-  exceptionalVersion = '0.5.0'
+  exceptionalVersion = '0.5.0-SNAPSHOT'
 }
 
 group 'ru.romangr'
@@ -71,8 +71,8 @@ publishing {
       def snapshotsRepoUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
       url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
       credentials (PasswordCredentials) {
-        username = findProperty("ossrhUsername")
-        password = findProperty("ossrhPassword")
+        username = findProperty("OSSRH_USERNAME")
+        password = findProperty("OSSRH_PASSWORD")
       }
     }
   }
@@ -86,6 +86,9 @@ dependencies {
 }
 
 signing {
+  def signingKey = findProperty("GPG_SECRET_KEY")
+  def signingPassword = findProperty("GPG_KEY_PASSPRHASE")
+  useInMemoryPgpKeys(signingKey, signingPassword)
   sign publishing.publications.maven
 }
 
@@ -128,6 +131,6 @@ jacocoTestCoverageVerification {
   }
 }
 
-task reportCoveralls {
+tasks.register('reportCoveralls') {
   finalizedBy(tasks.coveralls)
 }

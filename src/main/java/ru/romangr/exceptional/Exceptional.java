@@ -321,8 +321,7 @@ public final class Exceptional<T> {
    * Get the value from the {@link Exceptional} or default value if the {@link Exceptional} contains
    * exception or in empty state.
    *
-   * @param defaultValue to return if the {@link Exceptional} contains exception or in empty state.
-   * @return the value or default value.
+   * @return the value or null value.
    */
   @Nullable
   public T getOrNull() {
