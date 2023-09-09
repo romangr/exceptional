@@ -1,4 +1,4 @@
-# exceptional ![build status](https://api.travis-ci.com/romangr/exceptional.svg?branch=master)
+# exceptional ![build status](https://github.com/romangr/exceptional/actions/workflows/buildAndPublish.yml/badge.svg)
 
 Exceptional is a small util to simplify error handling in Java.
 
@@ -26,11 +26,11 @@ You just need to know if it was parsed or not. Exceptional makes exactly that.
 <dependency>
   <groupId>ru.romangr</groupId>
   <artifactId>exceptional</artifactId>
-  <version>0.4.0</version>
+  <version>0.5.0</version>
 </dependency>
 ```
 
 ### Gradle
 ```groovy
-implementation 'ru.romangr:exceptional:0.4.0'
+implementation 'ru.romangr:exceptional:0.5.0'
 ```
