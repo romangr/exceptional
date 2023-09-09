@@ -21,12 +21,14 @@ jobs:
           java-version: '8'
           distribution: 'corretto'
       - name: Build
-        run: ./gradlew build
+        run: |
+          ./gradlew build jacocoTestReport jacocoTestCoverageVerification
       - name: Publish to Maven central
         env:
           ORG_GRADLE_PROJECT_GPG_SECRET_KEY: ${{ secrets.GPG_SECRET_KEY }}
           ORG_GRADLE_PROJECT_GPG_KEY_PASSPRHASE: ${{ secrets.GPG_KEY_PASSPRHASE }}
           ORG_GRADLE_PROJECT_OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           ORG_GRADLE_PROJECT_OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+          ORG_GRADLE_PROJECT_COVERALLS_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
         if: github.ref == 'refs/heads/master'
         run: ./gradlew publish
