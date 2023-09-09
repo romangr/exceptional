@@ -86,6 +86,17 @@ public final class Exceptional<T> {
   }
 
   /**
+   * Wrap value from {@link Optional} with {@link Exceptional}.
+   *
+   * @param optional {@link Optional} to wrap value from.
+   * @param <V>      type of the value.
+   * @return an instance of {@link Exceptional} with value or in empty state.
+   */
+  public static <V> Exceptional<V> of(Optional<V> optional) {
+    return new Exceptional<>(optional.orElse(null));
+  }
+
+  /**
    * Wrap an exception with {@link Exceptional}.
    *
    * @param exception to wrap.
@@ -304,6 +315,21 @@ public final class Exceptional<T> {
       return defaultValue;
     }
     return Objects.requireNonNull(this.value);
+  }
+
+  /**
+   * Get the value from the {@link Exceptional} or default value if the {@link Exceptional} contains
+   * exception or in empty state.
+   *
+   * @param defaultValue to return if the {@link Exceptional} contains exception or in empty state.
+   * @return the value or default value.
+   */
+  @Nullable
+  public T getOrNull() {
+    if (this.thisIsNotValue()) {
+      return null;
+    }
+    return this.value;
   }
 
   /**
