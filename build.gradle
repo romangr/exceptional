@@ -4,7 +4,6 @@ plugins {
   id 'maven-publish'
   id 'signing'
   id 'jacoco'
-  id 'com.github.kt3k.coveralls' version '2.12.2'
 }
 
 ext {
@@ -23,11 +22,6 @@ java {
 
 repositories {
   jcenter()
-}
-
-coveralls {
-  sendToCoveralls = true
-  repoToken = findProperty("COVERALLS_TOKEN")
 }
 
 publishing {

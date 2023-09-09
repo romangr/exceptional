@@ -23,7 +23,6 @@ jobs:
       - name: Build
         run: |
           ./gradlew build jacocoTestReport jacocoTestCoverageVerification
-          ./gradlew reportCoveralls
       - name: Publish to Maven central
         env:
           ORG_GRADLE_PROJECT_GPG_SECRET_KEY: ${{ secrets.GPG_SECRET_KEY }}
