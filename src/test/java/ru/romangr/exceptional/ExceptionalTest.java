@@ -837,6 +837,37 @@ class ExceptionalTest {
   }
 
   @Test
+  void getOrThrowRuntimeWhenValue() {
+    String string = Exceptional.exceptional("test").getOrThrowRuntime();
+
+    assertThat(string).isEqualTo("test");
+  }
+
+  @Test
+  void getOrThrowRuntimeWhenRuntimeException() {
+    assertThatThrownBy(() ->
+        Exceptional.exceptional(new IllegalArgumentException("test")).getOrThrowRuntime())
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("test");
+  }
+
+  @Test
+  void getOrThrowRuntimeWhenCheckedException() {
+    assertThatThrownBy(() ->
+        Exceptional.exceptional(new Exception("test")).getOrThrowRuntime())
+        .isInstanceOf(ExceptionalWrappedException.class)
+        .hasCauseInstanceOf(Exception.class)
+        .hasMessageContaining("test");
+  }
+
+  @Test
+  void getOrThrowRuntimeWhenEmpty() {
+    Object object = Exceptional.exceptional((Object) null).getOrThrowRuntime();
+
+    assertThat(object).isNull();
+  }
+
+  @Test
   void processCollection() {
     Collection<Supplier<String>> collection = Arrays.asList(
         () -> "test1",

@@ -37,7 +37,7 @@ public final class Exceptional<T> {
    * Get some value from supplier catching all the exceptions.
    *
    * @param supplier to get value from.
-   * @param <V> type of the value.
+   * @param <V>      type of the value.
    * @return an instance of {@link Exceptional} with value or exception or in empty state.
    */
   public static <V> Exceptional<V> getExceptional(ExceptionalSupplier<V> supplier) {
@@ -52,7 +52,7 @@ public final class Exceptional<T> {
    * Get some value from supplier catching all the exceptions.
    *
    * @param supplier to get value from.
-   * @param <V> type of the value.
+   * @param <V>      type of the value.
    * @return an instance of {@link Exceptional} with value or exception or in empty state.
    */
   public static <V> Exceptional<V> attempt(ExceptionalSupplier<V> supplier) {
@@ -67,7 +67,7 @@ public final class Exceptional<T> {
    * Wrap null or some value with {@link Exceptional}.
    *
    * @param value to wrap.
-   * @param <V> type of the value.
+   * @param <V>   type of the value.
    * @return an instance of {@link Exceptional} with value or in empty state.
    */
   public static <V> Exceptional<V> exceptional(@Nullable V value) {
@@ -78,7 +78,7 @@ public final class Exceptional<T> {
    * Wrap null or some value with {@link Exceptional}.
    *
    * @param value to wrap.
-   * @param <V> type of the value.
+   * @param <V>   type of the value.
    * @return an instance of {@link Exceptional} with value or in empty state.
    */
   public static <V> Exceptional<V> of(@Nullable V value) {
@@ -89,7 +89,7 @@ public final class Exceptional<T> {
    * Wrap an exception with {@link Exceptional}.
    *
    * @param exception to wrap.
-   * @param <V> type of the exception.
+   * @param <V>       type of the exception.
    * @return an instance of {@link Exceptional} with exception.
    */
   public static <V> Exceptional<V> exceptional(Exception exception) {
@@ -100,7 +100,7 @@ public final class Exceptional<T> {
    * Wrap an exception with {@link Exceptional}.
    *
    * @param exception to wrap.
-   * @param <V> type of the exception.
+   * @param <V>       type of the exception.
    * @return an instance of {@link Exceptional} with exception.
    */
   public static <V> Exceptional<V> of(Exception exception) {
@@ -110,10 +110,11 @@ public final class Exceptional<T> {
   /**
    * Applies mapper to every collection element until the first return {@link Exceptional} with
    * exception from mapper.
+   *
    * @return an instance of {@link Exceptional} with {@link ProcessingResult}
    */
   public static <E, C> Exceptional<ProcessingResult<E>> processCollection(Collection<C> collection,
-      Function<? super C, Exceptional<E>> mapper) {
+                                                                          Function<? super C, Exceptional<E>> mapper) {
     Iterator<C> iterator = collection.iterator();
     if (!iterator.hasNext()) {
       return exceptional(new ProcessingResult<>(Collections.emptyList(), null));
@@ -142,7 +143,7 @@ public final class Exceptional<T> {
    * caught.
    *
    * @param mapper to get a new value.
-   * @param <V> type of new value.
+   * @param <V>    type of new value.
    * @return an instance of {@link Exceptional} with value or in empty state or with an exception
    * caught before mapping.
    */
@@ -159,7 +160,7 @@ public final class Exceptional<T> {
    * mapper.
    *
    * @param mapper to get a new value.
-   * @param <V> type of new value.
+   * @param <V>    type of new value.
    * @return an instance of {@link Exceptional} with value or in empty state or with an exception
    * caught before mapping or with an exception occurred in process of mapping.
    */
@@ -176,7 +177,7 @@ public final class Exceptional<T> {
    * mapper. Exceptions in mapper won't be caught.
    *
    * @param mapper to get a new value.
-   * @param <V> type of new value.
+   * @param <V>    type of new value.
    * @return an instance of {@link Exceptional} with value or in empty state or with an exception
    * caught before mapping or with exception from the {@link Exceptional} mapper returned.
    */
@@ -265,7 +266,7 @@ public final class Exceptional<T> {
    *
    * @return the value
    * @throws IllegalStateException if the {@link Exceptional} contains exception or it's in empty
-   * state.
+   *                               state.
    */
   public T getValue() throws IllegalStateException {
     if (this.isException()) {
@@ -282,7 +283,7 @@ public final class Exceptional<T> {
    *
    * @return the exception
    * @throws IllegalStateException if the {@link Exceptional} contains value or it's in empty
-   * state.
+   *                               state.
    */
   public Exception getException() throws IllegalStateException {
     if (!this.isException()) {
@@ -339,15 +340,15 @@ public final class Exceptional<T> {
    * Map the exception in the {@link Exceptional} to some other exception. Exceptions in mapper
    * won't be caught.
    *
-   * @param <E> type of exception to map
-   * @param clazz class of exception to apply mapper to
+   * @param <E>    type of exception to map
+   * @param clazz  class of exception to apply mapper to
    * @param mapper to get a new exception
    * @return an instance of {@link Exceptional} with value or in empty state or with an exception
    * returned by the mapper.
    */
   @SuppressWarnings("unchecked")
   public <E extends Exception> Exceptional<T> mapException(Class<E> clazz,
-      Function<E, Exception> mapper) {
+                                                           Function<E, Exception> mapper) {
     if (!this.isException() || !clazz.isAssignableFrom(this.exception.getClass())) {
       return this;
     }
@@ -374,15 +375,15 @@ public final class Exceptional<T> {
    * Executes some logic using not null exception from the {@link Exceptional} once per the
    * exception.
    *
-   * @param <E> type of exception to handle
-   * @param clazz class of exception to handle
+   * @param <E>      type of exception to handle
+   * @param clazz    class of exception to handle
    * @param consumer consumer of the exception.
    * @return an instance of {@link Exceptional} with value or in empty state or with an exception
    * caught before running this method or with an exception thrown by the exception consumer.
    */
   @SuppressWarnings("unchecked")
   public <E extends Exception> Exceptional<T> handleException(Class<E> clazz,
-      ExceptionalConsumer<E> consumer) {
+                                                              ExceptionalConsumer<E> consumer) {
     if (!this.isException() || isExceptionHandled
         || !(clazz.isAssignableFrom(exception.getClass()))) {
       return this;
@@ -434,7 +435,7 @@ public final class Exceptional<T> {
    * exception, thrown {@link ExceptionalWrappedException} will contain this exception as a cause.
    *
    * @return value from the {@link Exceptional} if it is present.
-   * @throws NullPointerException if {@link Exceptional} is empty.
+   * @throws NullPointerException        if {@link Exceptional} is empty.
    * @throws ExceptionalWrappedException if {@link Exceptional} contains exception.
    */
   public T getOrThrow() throws ExceptionalWrappedException, NullPointerException {
@@ -445,6 +446,29 @@ public final class Exceptional<T> {
       throw new ExceptionalWrappedException(this.exception);
     }
     throw new NullPointerException("Exceptional is empty");
+  }
+
+  /**
+   * Sometimes it's needed to integrate {@link Exceptional}-based API with APIs that expect
+   * exception to be thrown. This method can be used for that. If {@link Exceptional} contains an instance of
+   * {@link RuntimeException}, it will be thrown by this method.
+   *
+   * @return value from the {@link Exceptional} if it is present.
+   * @throws RuntimeException            if {@link Exceptional} contains an instance of {@link RuntimeException} exception.
+   * @throws ExceptionalWrappedException if {@link Exceptional} contains an instance of checked exception.
+   */
+  @Nullable
+  public T getOrThrowRuntime() throws RuntimeException, ExceptionalWrappedException, NullPointerException {
+    if (this.isValuePresent()) {
+      return this.value;
+    }
+    if (this.isException()) {
+      if (this.exception instanceof RuntimeException) {
+        throw (RuntimeException) this.exception;
+      }
+      throw new ExceptionalWrappedException(this.exception);
+    }
+    return null;
   }
 
   public boolean isEmpty() {
