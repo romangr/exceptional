@@ -26,8 +26,8 @@ repositories {
 }
 
 coveralls {
-  saveAsFile = true
-  sendToCoveralls = false
+  sendToCoveralls = true
+  repoToken = findProperty("COVERALLS_TOKEN")
 }
 
 publishing {
