@@ -83,6 +83,26 @@ class ExceptionalTest {
   }
 
   @Test
+  void ofOptionalWithValue() {
+    Exceptional<String> exceptional = Exceptional.of(Optional.of("test"));
+
+    assertThat(exceptional).isNotNull();
+    assertThat(exceptional.isException()).isFalse();
+    assertThat(exceptional.isValuePresent()).isTrue();
+    assertThat(exceptional.getValue()).isEqualTo("test");
+  }
+
+  @Test
+  void ofEmptyOptional() {
+    Exceptional<String> exceptional = Exceptional.of(Optional.empty());
+
+    assertThat(exceptional).isNotNull();
+    assertThat(exceptional.isException()).isFalse();
+    assertThat(exceptional.isValuePresent()).isFalse();
+    assertThat(exceptional.getOrNull()).isNull();
+  }
+
+  @Test
   void getException() {
     Exception exception = newException();
     Exceptional<Integer> exceptional = Exceptional.exceptional(exception);
@@ -863,6 +883,27 @@ class ExceptionalTest {
   @Test
   void getOrThrowRuntimeWhenEmpty() {
     Object object = Exceptional.exceptional((Object) null).getOrThrowRuntime();
+
+    assertThat(object).isNull();
+  }
+
+  @Test
+  void getOrNullWhenValue() {
+    String string = Exceptional.exceptional("test").getOrNull();
+
+    assertThat(string).isEqualTo("test");
+  }
+
+  @Test
+  void getOrNullWhenException() {
+    Object object = Exceptional.exceptional(new IllegalArgumentException("test")).getOrNull();
+
+    assertThat(object).isNull();
+  }
+
+  @Test
+  void getOrNullWhenEmpty() {
+    Object object = Exceptional.empty().getOrNull();
 
     assertThat(object).isNull();
   }
