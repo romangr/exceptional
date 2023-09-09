@@ -1,0 +1,28 @@
+name: Build and publish
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'corretto'
+      - name: Build
+        run: ./gradlew build
+      - name: Publish to Maven central
+        # if: github.ref == 'refs/heads/master'
+        run: ./gradlew publish
