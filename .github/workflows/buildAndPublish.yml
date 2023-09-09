@@ -21,7 +21,10 @@ jobs:
           java-version: '8'
           distribution: 'corretto'
       - name: Build
-        run: ./gradlew build
+        run: |
+          ./gradlew build jacocoTestReport jacocoTestCoverageVerification
+          ./gradlew reportCoveralls
+          curl -F 'json_file=@build/coveralls/report.json' 'https://coveralls.io/api/v1/jobs'
       - name: Publish to Maven central
         env:
           ORG_GRADLE_PROJECT_GPG_SECRET_KEY: ${{ secrets.GPG_SECRET_KEY }}
