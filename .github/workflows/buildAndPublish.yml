@@ -11,7 +11,6 @@ permissions:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -24,5 +23,8 @@ jobs:
       - name: Build
         run: ./gradlew build
       - name: Publish to Maven central
+        with:
+          ORG_GRADLE_PROJECT_GPG_SECRET_KEY: ${{ secrets.GPG_SECRET_KEY }}
+          ORG_GRADLE_PROJECT_GPG_KEY_PASSPRHASE: ${{ secrets.GPG_KEY_PASSPRHASE }}
         # if: github.ref == 'refs/heads/master'
         run: ./gradlew publish
